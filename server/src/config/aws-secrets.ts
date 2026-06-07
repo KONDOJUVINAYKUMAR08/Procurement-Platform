@@ -7,7 +7,7 @@ const secretsManager = new AWS.SecretsManager({
 export async function getSecrets() {
   const secret = await secretsManager
     .getSecretValue({
-      SecretId: 'procureflow/prod',
+      SecretId: process.env.SECRET_NAME || 'procureflow/prod'
     })
     .promise();
 
