@@ -1,3 +1,5 @@
+import { getSecrets } from './config/aws-secrets';
+import { updateConfig } from './config/secrets';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -82,14 +84,34 @@ app.use((_req: express.Request, res: express.Response) => {
 });
 
 // Start server
+// const start = async () => {
+//   try {
+//     await connectDatabase();
+//     app.listen(config.port, () => {
+//       logger.info(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
+//     });
+//   } catch (error) {
+//     logger.error('Failed to start server:', error);
+//     process.exit(1);
+//   }
+// };
 const start = async () => {
   try {
+
+    const secrets = await getSecrets();
+
+    updateConfig(secrets);
+
     await connectDatabase();
+
     app.listen(config.port, () => {
-      logger.info(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
+      logger.info(
+        `🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`
+      );
     });
+
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error("Failed to start server", error);
     process.exit(1);
   }
 };

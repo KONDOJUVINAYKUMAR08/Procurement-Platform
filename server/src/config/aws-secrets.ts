@@ -1,0 +1,19 @@
+import AWS from 'aws-sdk';
+
+const secretsManager = new AWS.SecretsManager({
+  region: 'us-east-1',
+});
+
+export async function getSecrets() {
+  const secret = await secretsManager
+    .getSecretValue({
+      SecretId: 'procureflow/prod',
+    })
+    .promise();
+
+  if (!secret.SecretString) {
+    throw new Error('SecretString is empty');
+  }
+
+  return JSON.parse(secret.SecretString);
+}

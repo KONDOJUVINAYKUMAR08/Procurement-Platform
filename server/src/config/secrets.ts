@@ -61,3 +61,13 @@ export const connectDatabase = async (): Promise<void> => {
 };
 
 export default config;
+
+export const updateConfig = (secrets: any) => {
+  config.mongoUri = secrets.MONGODB_URI;
+  config.jwtSecret = secrets.JWT_SECRET;
+  config.jwtRefreshSecret = secrets.JWT_REFRESH_SECRET;
+
+  config.aws.region = secrets.AWS_REGION;
+  config.aws.s3Bucket = secrets.AWS_S3_BUCKET;
+  config.aws.kmsKeyId = secrets.AWS_KMS_KEY_ID;
+};
