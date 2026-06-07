@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProcureFlow – UI Preview</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #000; color: #fff; -webkit-font-smoothing: antialiased; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* NAV */
+.top-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+.top-nav .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+.top-nav .logo svg { color: #fff; }
+.top-nav .tabs { display: flex; gap: 2px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 3px; }
+.top-nav .tab { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; color: #777; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.top-nav .tab:hover { color: #ccc; }
+.top-nav .tab.active { background: #fff; color: #000; }
+
+/* SCREENS */
+.screen { display: none; padding-top: 72px; min-height: 100vh; }
+.screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* LOGIN */
+.login-screen { display: none; min-height: 100vh; align-items: center; justify-content: center; padding: 20px; }
+.login-screen.active { display: flex; }
+.login-card { width: 100%; max-width: 380px; }
+.login-logo { text-align: center; margin-bottom: 40px; }
+.login-logo .icon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 24px; }
+.login-logo h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
+.login-logo p { font-size: 14px; color: #666; margin-top: 8px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #fff; font-family: inherit; outline: none; transition: all 0.2s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: rgba(255,255,255,0.3); box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
+.form-group input::placeholder { color: #444; }
+.btn-primary { background: #fff; color: #000; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; }
+.btn-primary:hover { background: #e5e5e5; }
+.btn-secondary { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; }
+.btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+.btn-full { width: 100%; justify-content: center; }
+.demo-box { margin-top: 24px; padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); }
+.demo-box p { font-size: 11px; color: #666; margin-bottom: 8px; font-weight: 500; }
+.demo-box .cred { font-size: 12px; color: #555; margin-bottom: 4px; }
+.demo-box .cred span { color: #aaa; }
+.form-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 16px; }
+.form-row label { display: flex; align-items: center; gap: 6px; color: #666; cursor: pointer; }
+.form-row a { color: #666; text-decoration: none; }
+.form-row a:hover { color: #fff; }
+.divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 24px 0; }
+
+/* LAYOUT WITH SIDEBAR */
+.app-layout { display: flex; min-height: 100vh; padding-top: 56px; }
+.sidebar { width: 240px; background: #111; border-right: 1px solid rgba(255,255,255,0.06); position: fixed; top: 56px; left: 0; bottom: 0; padding: 16px 12px; overflow-y: auto; }
+.sidebar .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #666; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; }
+.sidebar .nav-item:hover { color: #ccc; background: rgba(255,255,255,0.03); }
+.sidebar .nav-item.active { background: #fff; color: #000; }
+.sidebar .nav-item.active svg { color: #000; }
+.sidebar .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.sidebar .sidebar-user { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; position: absolute; bottom: 0; left: 0; right: 0; }
+.sidebar .sidebar-user .avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+.sidebar .sidebar-user .info { flex: 1; min-width: 0; }
+.sidebar .sidebar-user .info .name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar .sidebar-user .info .role { font-size: 11px; color: #555; text-transform: capitalize; }
+.main-content { margin-left: 240px; flex: 1; padding: 24px 32px; min-height: calc(100vh - 56px); }
+
+/* HEADER BAR INSIDE PAGES */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; }
+.page-header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
+.page-header .desc { font-size: 14px; color: #555; margin-top: 4px; }
+
+/* METRIC CARDS */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.metric-card { background: rgba(17,17,17,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px; transition: all 0.3s; }
+.metric-card:hover { border-color: rgba(255,255,255,0.12); background: rgba(17,17,17,0.9); }
+.metric-card .top { display: flex; align-items: start; justify-content: space-between; margin-bottom: 12px; }
+.metric-card .icon { padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.04); color: #666; display: flex; align-items: center; justify-content: center; }
+.metric-card .trend { font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 2px; }
+.metric-card .trend.up { color: #4ade80; }
+.metric-card .trend.down { color: #f87171; }
+.metric-card .value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.metric-card .label { font-size: 13px; color: #555; margin-top: 4px; }
+.metric-card .sub { font-size: 11px; color: #333; }
+
+/* GLASS CARD */
+.glass-card { background: rgba(17,17,17,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
+.glass-card .card-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; }
+.glass-card .card-header h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+/* CHART PLACEHOLDER */
+.chart-area { height: 280px; padding: 24px; position: relative; }
+.chart-area svg { width: 100%; height: 100%; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead th { text-align: left; font-size: 11px; font-weight: 500; color: #555; padding: 12px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: 0.05em; }
+.data-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.15s; cursor: pointer; }
+.data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.data-table td { padding: 14px 24px; font-size: 13px; }
+.data-table .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+.data-table .muted { color: #555; }
+.data-table .dim { color: #333; }
+.data-table .white { color: #fff; font-weight: 500; }
+.data-table .bold { font-weight: 600; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 500; }
+.badge-green { background: rgba(74,222,128,0.1); color: #4ade80; }
+.badge-amber { background: rgba(251,191,36,0.1); color: #fbbf24; }
+.badge-red { background: rgba(248,113,113,0.1); color: #f87171; }
+.badge-blue { background: rgba(96,165,250,0.1); color: #60a5fa; }
+.badge-gray { background: rgba(150,150,150,0.1); color: #888; }
+.badge-purple { background: rgba(192,132,252,0.1); color: #c084fc; }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+.grid-2-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+/* SEARCH BAR */
+.search-filter { display: flex; gap: 12px; margin-bottom: 24px; }
+.search-box { flex: 1; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0 12px; }
+.search-box input { flex: 1; background: transparent; border: none; font-size: 13px; color: #fff; padding: 9px 0; outline: none; font-family: inherit; }
+.search-box input::placeholder { color: #444; }
+.search-box svg { color: #555; flex-shrink: 0; }
+.filter-select { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0 12px; font-size: 13px; color: #fff; font-family: inherit; outline: none; appearance: none; cursor: pointer; }
+
+/* TABLE PAGINATION */
+.table-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-top: 1px solid rgba(255,255,255,0.06); }
+.table-footer span { font-size: 12px; color: #555; }
+.table-footer .page-btns { display: flex; gap: 4px; }
+.table-footer .page-btns button { padding: 4px; border-radius: 4px; border: none; background: transparent; color: #666; cursor: pointer; }
+.table-footer .page-btns button:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+/* AVATAR */
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.06); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.avatar-sm { width: 24px; height: 24px; font-size: 9px; }
+.cell-with-avatar { display: flex; align-items: center; gap: 10px; }
+.cell-with-avatar .cell-text .primary { font-size: 13px; font-weight: 500; color: #fff; }
+.cell-with-avatar .cell-text .secondary { font-size: 11px; color: #555; }
+
+/* STAR */
+.stars { color: #333; font-size: 13px; letter-spacing: 1px; }
+.stars .filled { color: #fff; }
+
+/* ACTIVITY */
+.activity-item { display: flex; align-items: start; gap: 12px; padding: 12px; border-radius: 8px; transition: background 0.15s; }
+.activity-item:hover { background: rgba(255,255,255,0.02); }
+.activity-item .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); margin-top: 6px; flex-shrink: 0; }
+.activity-item .act-text { font-size: 13px; color: #999; line-height: 1.5; }
+.activity-item .act-text strong { color: #fff; font-weight: 500; }
+.activity-item .act-time { font-size: 11px; color: #444; margin-top: 2px; }
+
+/* NOTIFICATION DOT */
+.notif-dot { position: absolute; top: -2px; right: -2px; width: 16px; height: 16px; background: #fff; color: #000; font-size: 9px; font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+/* VENDOR DETAIL */
+.detail-header { display: flex; align-items: start; justify-content: space-between; margin-bottom: 24px; }
+.detail-header .left { display: flex; align-items: center; gap: 16px; }
+.detail-header .back-btn { padding: 8px; border-radius: 8px; border: none; background: transparent; color: #666; cursor: pointer; }
+.detail-header .back-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.contact-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.contact-row svg { color: #555; flex-shrink: 0; }
+.contact-row .contact-label { font-size: 11px; color: #555; }
+.contact-row .contact-value { font-size: 13px; color: #fff; }
+
+/* TAB PILLS */
+.tab-pills { display: flex; gap: 2px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 3px; width: fit-content; margin-bottom: 24px; }
+.tab-pills .pill { padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #666; cursor: pointer; transition: all 0.2s; }
+.tab-pills .pill:hover { color: #ccc; }
+.tab-pills .pill.active { background: #fff; color: #000; }
+
+/* MINI CHART SVG */
+.mini-chart { padding: 20px 24px; }
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-2-equal { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; }
+}
+@media (max-width: 640px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+  .top-nav .tabs { display: none; }
+}
+
+/* STATUS DOT */
+.status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.dot-green { background: #4ade80; }
+.dot-amber { background: #fbbf24; }
+.dot-red { background: #f87171; }
+.dot-gray { background: #666; }
+
+/* ACTION BUTTONS */
+.action-btn { padding: 5px; border-radius: 4px; border: none; background: transparent; cursor: pointer; color: #555; display: inline-flex; align-items: center; justify-content: center; }
+.action-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.action-btn.danger:hover { color: #f87171; }
+.action-btn.success:hover { color: #4ade80; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    ProcureFlow
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showScreen('login')">Login</div>
+    <div class="tab" onclick="showScreen('dashboard')">Dashboard</div>
+    <div class="tab" onclick="showScreen('vendors')">Vendors</div>
+    <div class="tab" onclick="showScreen('vendor-detail')">Vendor Detail</div>
+    <div class="tab" onclick="showScreen('purchase-orders')">POs</div>
+    <div class="tab" onclick="showScreen('invoices')">Invoices</div>
+    <div class="tab" onclick="showScreen('settings')">Settings</div>
+  </div>
+</nav>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div class="login-screen active" id="screen-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </div>
+      <h1>Welcome back</h1>
+      <p>Sign in to your ProcureFlow account</p>
+    </div>
+    <div style="margin-bottom:20px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);font-size:12px;color:#555;text-align:center">
+      ✨ This is a visual preview of the ProcureFlow UI
+    </div>
+    <form>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" placeholder="name@company.com" value="admin@procurement.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" value="••••••••">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" checked> Remember me</label>
+        <a href="#">Forgot password?</a>
+      </div>
+      <button type="button" class="btn-primary btn-full" onclick="showScreen('dashboard')">
+        Sign in
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </form>
+    <hr class="divider">
+    <div class="demo-box">
+      <p>Demo Credentials</p>
+      <div class="cred">Admin: <span>admin@procurement.com / admin123</span></div>
+      <div class="cred">Manager: <span>manager@procurement.com / manager123</span></div>
+      <div class="cred">Finance: <span>finance@procurement.com / finance123</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div style="margin-bottom:16px;padding:0 4px">
+      <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        ProcureFlow
+      </div>
+    </div>
+    <div class="nav-item active" onclick="showScreen('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showScreen('vendors')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+      Vendors
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      Purchase Requests
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+      Purchase Orders
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10V2a10 10 0 1 0 10 10h-8a2 2 0 0 1-2-2Z"/><path d="M20.27 3.73 16 8h6.37A6.5 6.5 0 0 0 20.27 3.73Z"/></svg>
+      Contracts
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+      Invoices
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      Documents
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      Notifications
+      <span style="margin-left:auto;background:#fff;color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px">3</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      Reports
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+      Audit Logs
+    </div>
+    <div class="sidebar-user">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar">AU</div>
+        <div class="info">
+          <div class="name">Admin User</div>
+          <div class="role">admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <!-- DASHBOARD SCREEN -->
+    <div class="screen" id="screen-dashboard">
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <div class="desc">Overview of your procurement operations</div>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/></svg></div>
+            <span class="trend up">↑ 12%</span>
+          </div>
+          <div class="value">5</div>
+          <div class="label">Total Vendors</div>
+          <div class="sub">4 active</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/></svg></div>
+            <span class="trend up">↑ 8%</span>
+          </div>
+          <div class="value">5</div>
+          <div class="label">Purchase Requests</div>
+          <div class="sub">2 pending</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></div>
+            <span class="trend up">↑ 5%</span>
+          </div>
+          <div class="value">3</div>
+          <div class="label">Purchase Orders</div>
+          <div class="sub">2 active</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10V2a10 10 0 1 0 10 10h-8a2 2 0 0 1-2-2Z"/></svg></div>
+            <span class="trend down">↓ 2%</span>
+          </div>
+          <div class="value">3</div>
+          <div class="label">Active Contracts</div>
+          <div class="sub">1 expiring</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+            <span class="trend up">↑ 15%</span>
+          </div>
+          <div class="value">4</div>
+          <div class="label">Total Invoices</div>
+          <div class="sub">2 pending</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <span class="trend up">+3</span>
+          </div>
+          <div class="value">2</div>
+          <div class="label">Pending Approvals</div>
+          <div class="sub">Requires action</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg></div>
+          </div>
+          <div class="value">1</div>
+          <div class="label">Expiring Contracts</div>
+          <div class="sub">Within 30 days</div>
+        </div>
+        <div class="metric-card">
+          <div class="top">
+            <div class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+            <span class="trend up">↑ 18%</span>
+          </div>
+          <div class="value">$71,820</div>
+          <div class="label">Monthly Spend</div>
+          <div class="sub">This quarter</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid-2">
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
+              Monthly Procurement Spend
+            </h3>
+          </div>
+          <div class="chart-area">
+            <svg viewBox="0 0 600 220">
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stop-color="#ffffff" stop-opacity="0.12"/>
+                  <stop offset="95%" stop-color="#ffffff" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- Grid lines -->
+              <line x1="50" y1="20" x2="580" y2="20" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3"/>
+              <line x1="50" y1="70" x2="580" y2="70" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3"/>
+              <line x1="50" y1="120" x2="580" y2="120" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3"/>
+              <line x1="50" y1="170" x2="580" y2="170" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3"/>
+              <!-- Y Labels -->
+              <text x="40" y="24" fill="#444" font-size="10" text-anchor="end">$50k</text>
+              <text x="40" y="74" fill="#444" font-size="10" text-anchor="end">$37k</text>
+              <text x="40" y="124" fill="#444" font-size="10" text-anchor="end">$25k</text>
+              <text x="40" y="174" fill="#444" font-size="10" text-anchor="end">$12k</text>
+              <!-- X Labels -->
+              <text x="100" y="200" fill="#444" font-size="10" text-anchor="middle">Jan</text>
+              <text x="200" y="200" fill="#444" font-size="10" text-anchor="middle">Feb</text>
+              <text x="300" y="200" fill="#444" font-size="10" text-anchor="middle">Mar</text>
+              <text x="400" y="200" fill="#444" font-size="10" text-anchor="middle">Apr</text>
+              <text x="500" y="200" fill="#444" font-size="10" text-anchor="middle">May</text>
+              <!-- Area -->
+              <path d="M100,140 L200,90 L300,110 L400,50 L500,70 L500,190 L100,190 Z" fill="url(#areaGrad)"/>
+              <!-- Line -->
+              <polyline points="100,140 200,90 300,110 400,50 500,70" fill="none" stroke="#fff" stroke-width="2"/>
+              <!-- Dots -->
+              <circle cx="100" cy="140" r="3" fill="#fff"/>
+              <circle cx="200" cy="90" r="3" fill="#fff"/>
+              <circle cx="300" cy="110" r="3" fill="#fff"/>
+              <circle cx="400" cy="50" r="3" fill="#fff"/>
+              <circle cx="500" cy="70" r="3" fill="#fff"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>Vendors by Status</h3>
+          </div>
+          <div style="padding:24px;display:flex;flex-direction:column;align-items:center">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <!-- Donut chart -->
+              <circle cx="100" cy="100" r="70" fill="none" stroke="#fff" stroke-width="24" stroke-dasharray="176 264" stroke-dashoffset="0" transform="rotate(-90 100 100)" opacity="0.9"/>
+              <circle cx="100" cy="100" r="70" fill="none" stroke="#777" stroke-width="24" stroke-dasharray="88 352" stroke-dashoffset="-176" transform="rotate(-90 100 100)" opacity="0.7"/>
+              <circle cx="100" cy="100" r="70" fill="none" stroke="#333" stroke-width="24" stroke-dasharray="44 396" stroke-dashoffset="-264" transform="rotate(-90 100 100)"/>
+              <circle cx="100" cy="100" r="70" fill="none" stroke="#1a1a1a" stroke-width="24" stroke-dasharray="44 396" stroke-dashoffset="-308" transform="rotate(-90 100 100)"/>
+              <text x="100" y="96" fill="#fff" font-size="28" font-weight="700" text-anchor="middle">5</text>
+              <text x="100" y="114" fill="#555" font-size="11" text-anchor="middle">vendors</text>
+            </svg>
+            <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;justify-content:center">
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666">
+                <span style="width:8px;height:8px;border-radius:50%;background:#fff"></span> active (4)
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666">
+                <span style="width:8px;height:8px;border-radius:50%;background:#777"></span> pending (2)
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666">
+                <span style="width:8px;height:8px;border-radius:50%;background:#333"></span> inactive (1)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="grid-2-equal">
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>Procurement by Department</h3>
+          </div>
+          <div class="mini-chart">
+            <svg viewBox="0 0 500 200">
+              <line x1="40" y1="160" x2="480" y2="160" stroke="rgba(255,255,255,0.06)"/>
+              <text x="80" y="185" fill="#444" font-size="10" text-anchor="middle">IT</text>
+              <text x="180" y="185" fill="#444" font-size="10" text-anchor="middle">Operations</text>
+              <text x="280" y="185" fill="#444" font-size="10" text-anchor="middle">Finance</text>
+              <text x="380" y="185" fill="#444" font-size="10" text-anchor="middle">HR</text>
+              <rect x="55" y="30" width="50" height="130" rx="4" fill="#fff" opacity="0.8"/>
+              <rect x="155" y="80" width="50" height="80" rx="4" fill="#fff" opacity="0.5"/>
+              <rect x="255" y="110" width="50" height="50" rx="4" fill="#fff" opacity="0.3"/>
+              <rect x="355" y="130" width="50" height="30" rx="4" fill="#fff" opacity="0.2"/>
+              <text x="80" y="25" fill="#888" font-size="10" text-anchor="middle">$215,000</text>
+              <text x="180" y="75" fill="#888" font-size="10" text-anchor="middle">$17,000</text>
+              <text x="280" y="105" fill="#888" font-size="10" text-anchor="middle">$5,400</text>
+              <text x="380" y="125" fill="#888" font-size="10" text-anchor="middle">$2,000</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <div style="padding:8px 12px">
+            <div class="activity-item">
+              <div class="avatar-sm avatar" style="margin-top:2px">AU</div>
+              <div>
+                <div class="act-text"><strong>Admin User</strong> approved <strong style="color:#888">purchase request</strong></div>
+                <div class="act-time">2 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="avatar-sm avatar" style="margin-top:2px;background:rgba(96,165,250,0.15);color:#60a5fa">PM</div>
+              <div>
+                <div class="act-text"><strong>Procurement Manager</strong> created <strong style="color:#888">purchase order PO-2403-0003</strong></div>
+                <div class="act-time">4 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="avatar-sm avatar" style="margin-top:2px;background:rgba(74,222,128,0.15);color:#4ade80">FT</div>
+              <div>
+                <div class="act-text"><strong>Finance Team</strong> created <strong style="color:#888">invoice INV-2403-0003</strong></div>
+                <div class="act-time">6 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="avatar-sm avatar" style="margin-top:2px">AU</div>
+              <div>
+                <div class="act-text"><strong>Admin User</strong> created <strong style="color:#888">contract CTR-24-0001</strong></div>
+                <div class="act-time">1 day ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="avatar-sm avatar" style="margin-top:2px;background:rgba(192,132,252,0.15);color:#c084fc">PM</div>
+              <div>
+                <div class="act-text"><strong>Procurement Manager</strong> updated <strong style="color:#888">vendor TechSupply Inc.</strong></div>
+                <div class="act-time">2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENDORS SCREEN -->
+    <div class="screen" id="screen-vendors">
+      <div class="page-header">
+        <div>
+          <h1>Vendors</h1>
+          <div class="desc">Manage your vendor relationships</div>
+        </div>
+        <button class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Add Vendor
+        </button>
+      </div>
+
+      <div class="search-filter">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Search vendors...">
+        </div>
+        <select class="filter-select">
+          <option>All Status</option>
+          <option>Active</option>
+          <option>Pending</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+
+      <div class="glass-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Vendor</th>
+              <th>Code</th>
+              <th>Contact</th>
+              <th>Status</th>
+              <th>Rating</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr onclick="showScreen('vendor-detail')">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar">T</div>
+                  <div class="cell-text">
+                    <div class="primary">TechSupply Inc.</div>
+                    <div class="secondary">john@techsupply.com</div>
+                  </div>
+                </div>
+              </td>
+              <td class="mono muted">VND-001</td>
+              <td class="muted">John Smith</td>
+              <td><span class="badge badge-green">active</span></td>
+              <td><span class="stars"><span class="filled">★★★★</span>½</span></td>
+              <td class="muted">Jan 15, 2024</td>
+            </tr>
+            <tr onclick="showScreen('vendor-detail')">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar">O</div>
+                  <div class="cell-text">
+                    <div class="primary">OfficeMax Solutions</div>
+                    <div class="secondary">sarah@officemax.com</div>
+                  </div>
+                </div>
+              </td>
+              <td class="mono muted">VND-002</td>
+              <td class="muted">Sarah Johnson</td>
+              <td><span class="badge badge-green">active</span></td>
+              <td><span class="stars"><span class="filled">★★★★</span>☆</span></td>
+              <td class="muted">Jan 20, 2024</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar">C</div>
+                  <div class="cell-text">
+                    <div class="primary">CloudNet Services</div>
+                    <div class="secondary">mike@cloudnet.com</div>
+                  </div>
+                </div>
+              </td>
+              <td class="mono muted">VND-003</td>
+              <td class="muted">Mike Davis</td>
+              <td><span class="badge badge-amber">pending</span></td>
+              <td><span class="stars"><span class="filled">★★★</span>☆☆</span></td>
+              <td class="muted">Feb 1, 2024</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar">S</div>
+                  <div class="cell-text">
+                    <div class="primary">SecureIT Corp</div>
+                    <div class="secondary">emily@secureit.com</div>
+                  </div>
+                </div>
+              </td>
+              <td class="mono muted">VND-004</td>
+              <td class="muted">Emily Brown</td>
+              <td><span class="badge badge-green">active</span></td>
+              <td><span class="stars"><span class="filled">★★★★★</span></span></td>
+              <td class="muted">Feb 10, 2024</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar">G</div>
+                  <div class="cell-text">
+                    <div class="primary">GreenEnergy Ltd.</div>
+                    <div class="secondary">david@greenenergy.com</div>
+                  </div>
+                </div>
+              </td>
+              <td class="mono muted">VND-005</td>
+              <td class="muted">David Wilson</td>
+              <td><span class="badge badge-gray">inactive</span></td>
+              <td><span class="stars"><span class="filled">★★★</span>☆☆</span></td>
+              <td class="muted">Mar 1, 2024</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-footer">
+          <span>Showing 1-5 of 5</span>
+          <div class="page-btns">
+            <button disabled>‹</button>
+            <button disabled>›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENDOR DETAIL -->
+    <div class="screen" id="screen-vendor-detail">
+      <div class="detail-header">
+        <div class="left">
+          <button class="back-btn" onclick="showScreen('vendors')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <h1 style="font-size:24px;font-weight:700">TechSupply Inc.</h1>
+              <span class="badge badge-green">active</span>
+            </div>
+            <div style="font-size:13px;color:#555;font-family:monospace;margin-top:2px">VND-001</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" style="padding:8px 14px;font-size:13px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            Edit
+          </button>
+          <button class="btn-secondary" style="padding:8px 14px;font-size:13px;color:#f87171;border-color:rgba(248,113,113,0.2)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="glass-card" style="padding:24px">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:20px">Contact Information</h3>
+            <div class="contact-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <div><div class="contact-label">Contact Person</div><div class="contact-value">John Smith</div></div>
+            </div>
+            <div class="contact-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <div><div class="contact-label">Email</div><div class="contact-value">john@techsupply.com</div></div>
+            </div>
+            <div class="contact-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <div><div class="contact-label">Phone</div><div class="contact-value">+1-555-0101</div></div>
+            </div>
+            <div class="contact-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div><div class="contact-label">Address</div><div class="contact-value">123 Tech Ave, San Francisco, CA 94102<br><span style="color:#555">United States</span></div></div>
+            </div>
+            <div style="padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px">
+              <div class="contact-label">Rating</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <span style="color:#fff;font-size:14px">★★★★</span><span style="color:#333;font-size:14px">½</span>
+                <span style="font-size:13px;color:#555">4.5/5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="padding:24px">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px">Activity Timeline</h3>
+          <div style="padding-left:8px">
+            <div style="display:flex;gap:12px;margin-bottom:20px;position:relative">
+              <div style="position:relative">
+                <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:6px"></div>
+                <div style="width:1px;height:calc(100% + 12px);background:rgba(255,255,255,0.06);margin:8px auto"></div>
+              </div>
+              <div>
+                <div style="font-size:13px;color:#fff">Vendor created</div>
+                <div style="font-size:11px;color:#444;margin-top:2px">2 weeks ago</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:20px;position:relative">
+              <div style="position:relative">
+                <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:6px"></div>
+                <div style="width:1px;height:calc(100% + 12px);background:rgba(255,255,255,0.06);margin:8px auto"></div>
+              </div>
+              <div>
+                <div style="font-size:13px;color:#fff">Status changed to active</div>
+                <div style="font-size:11px;color:#444;margin-top:2px">1 week ago</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:20px;position:relative">
+              <div>
+                <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);margin-top:6px"></div>
+              </div>
+              <div>
+                <div style="font-size:13px;color:#fff">Vendor details updated</div>
+                <div style="font-size:11px;color:#444;margin-top:2px">3 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PURCHASE ORDERS -->
+    <div class="screen" id="screen-purchase-orders">
+      <div class="page-header">
+        <div>
+          <h1>Purchase Orders</h1>
+          <div class="desc">Manage purchase orders and track deliveries</div>
+        </div>
+        <button class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Create PO
+        </button>
+      </div>
+
+      <div class="search-filter">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Search purchase orders...">
+        </div>
+        <select class="filter-select">
+          <option>All Status</option>
+          <option>Issued</option>
+          <option>Completed</option>
+          <option>Cancelled</option>
+        </select>
+      </div>
+
+      <div class="glass-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>PO Number</th>
+              <th>Vendor</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Order Date</th>
+              <th>Delivery</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono white">PO-2401-0001</td>
+              <td class="muted">TechSupply Inc.</td>
+              <td class="white bold">$43,200</td>
+              <td><span class="badge badge-green">completed</span></td>
+              <td class="muted">Jan 15, 2024</td>
+              <td class="muted">Jan 30, 2024</td>
+            </tr>
+            <tr>
+              <td class="mono white">PO-2402-0002</td>
+              <td class="muted">SecureIT Corp</td>
+              <td class="white bold">$27,000</td>
+              <td><span class="badge badge-blue">issued</span></td>
+              <td class="muted">Feb 1, 2024</td>
+              <td class="muted">Feb 28, 2024</td>
+            </tr>
+            <tr>
+              <td class="mono white">PO-2403-0003</td>
+              <td class="muted">OfficeMax Solutions</td>
+              <td class="white bold">$1,620</td>
+              <td><span class="badge badge-blue">issued</span></td>
+              <td class="muted">Mar 1, 2024</td>
+              <td class="muted">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-footer">
+          <span>Showing 1-3 of 3</span>
+          <div class="page-btns"><button disabled>‹</button><button disabled>›</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="screen" id="screen-invoices">
+      <div class="page-header">
+        <div>
+          <h1>Invoices</h1>
+          <div class="desc">Manage invoices and track payments</div>
+        </div>
+        <button class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          New Invoice
+        </button>
+      </div>
+
+      <!-- Invoice Stats Cards -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+        <div class="metric-card" style="padding:16px">
+          <div class="label" style="margin-top:0;margin-bottom:4px">Total Outstanding</div>
+          <div style="font-size:22px;font-weight:700">$55,620</div>
+          <div style="font-size:11px;color:#444;margin-top:2px">2 invoices pending</div>
+        </div>
+        <div class="metric-card" style="padding:16px">
+          <div class="label" style="margin-top:0;margin-bottom:4px">Paid This Month</div>
+          <div style="font-size:22px;font-weight:700">$43,200</div>
+          <div style="font-size:11px;color:#444;margin-top:2px">1 invoice paid</div>
+        </div>
+        <div class="metric-card" style="padding:16px">
+          <div class="label" style="margin-top:0;margin-bottom:4px">Overdue</div>
+          <div style="font-size:22px;font-weight:700;color:#f87171">$0</div>
+          <div style="font-size:11px;color:#444;margin-top:2px">0 invoices overdue</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Vendor</th>
+              <th>Amount</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="mono white">INV-2401-0001</div><div class="dim" style="font-size:11px">Laptops delivery</div></td>
+              <td class="muted">TechSupply Inc.</td>
+              <td><div class="white bold">$43,200</div><div class="dim" style="font-size:10px">$40,000 + $3,200 tax</div></td>
+              <td class="muted">Feb 15, 2024</td>
+              <td><span class="badge badge-green">paid</span></td>
+              <td><span style="font-size:11px;color:#444">Wire Transfer</span></td>
+            </tr>
+            <tr>
+              <td><div class="mono white">INV-2402-0002</div><div class="dim" style="font-size:11px">Security audit</div></td>
+              <td class="muted">SecureIT Corp</td>
+              <td><div class="white bold">$27,000</div><div class="dim" style="font-size:10px">$25,000 + $2,000 tax</div></td>
+              <td class="muted">Mar 15, 2024</td>
+              <td><span class="badge badge-green">approved</span></td>
+              <td><button class="action-btn success" title="Mark as paid"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button></td>
+            </tr>
+            <tr>
+              <td><div class="mono white">INV-2403-0003</div><div class="dim" style="font-size:11px">Office supplies</div></td>
+              <td class="muted">OfficeMax Solutions</td>
+              <td><div class="white bold">$1,620</div><div class="dim" style="font-size:10px">$1,500 + $120 tax</div></td>
+              <td class="muted">Apr 1, 2024</td>
+              <td><span class="badge badge-amber">pending</span></td>
+              <td><button class="action-btn success" title="Approve"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button></td>
+            </tr>
+            <tr>
+              <td><div class="mono white">INV-2404-0004</div><div class="dim" style="font-size:11px">Q2 Office supplies</div></td>
+              <td class="muted">OfficeMax Solutions</td>
+              <td><div class="white bold">$54,000</div><div class="dim" style="font-size:10px">$50,000 + $4,000 tax</div></td>
+              <td class="muted">Jun 30, 2024</td>
+              <td><span class="badge badge-amber">pending</span></td>
+              <td><button class="action-btn success" title="Approve"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-footer">
+          <span>Showing 1-4 of 4</span>
+          <div class="page-btns"><button disabled>‹</button><button disabled>›</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <div class="page-header">
+        <div>
+          <h1>Settings</h1>
+          <div class="desc">Manage your account and application preferences</div>
+        </div>
+      </div>
+
+      <div style="max-width:640px">
+        <div class="glass-card" style="padding:24px;margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile Information
+          </h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group"><label>First Name</label><input value="Admin"></div>
+            <div class="form-group"><label>Last Name</label><input value="User"></div>
+            <div class="form-group"><label>Email</label><input value="admin@procurement.com" style="opacity:0.5"></div>
+            <div class="form-group"><label>Department</label><input value="Administration" style="opacity:0.5"></div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:flex-end">
+            <button class="btn-primary" style="font-size:13px;padding:8px 20px">Save Changes</button>
+          </div>
+        </div>
+
+        <div class="glass-card" style="padding:24px;margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Security
+          </h3>
+          <div class="form-group"><label>Current Password</label><input type="password" placeholder="Enter current password"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group"><label>New Password</label><input type="password" placeholder="Enter new password"></div>
+            <div class="form-group"><label>Confirm Password</label><input type="password" placeholder="Confirm new password"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end"><button class="btn-secondary" style="font-size:13px;padding:8px 20px">Update Password</button></div>
+        </div>
+
+        <div class="glass-card" style="padding:24px;margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            Notification Preferences
+          </h3>
+          <div style="space-y:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div><div style="font-size:13px;color:#fff">Contract expiration alerts</div><div style="font-size:11px;color:#444">Get notified when contracts are about to expire</div></div>
+              <div style="width:36px;height:20px;border-radius:10px;background:#fff;position:relative;cursor:pointer"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#000"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div><div style="font-size:13px;color:#fff">Invoice due date reminders</div><div style="font-size:11px;color:#444">Receive reminders for upcoming invoice due dates</div></div>
+              <div style="width:36px;height:20px;border-radius:10px;background:#fff;position:relative;cursor:pointer"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#000"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div><div style="font-size:13px;color:#fff">Purchase request updates</div><div style="font-size:11px;color:#444">Notifications when requests are approved or rejected</div></div>
+              <div style="width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);position:relative;cursor:pointer"><div style="position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#555"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+              <div><div style="font-size:13px;color:#fff">Vendor status changes</div><div style="font-size:11px;color:#444">Alerts when vendor status is updated</div></div>
+              <div style="width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);position:relative;cursor:pointer"><div style="position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#555"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="padding:24px">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+            System Information
+          </h3>
+          <div style="font-size:13px">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#555">Application Version</span><span style="color:#fff">1.0.0</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#555">API Status</span><span style="color:#4ade80">Connected</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#555">Role</span><span style="color:#fff">Admin</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:#555">Environment</span><span style="color:#fff">Development</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.login-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  
+  const el = document.getElementById('screen-' + id);
+  if (el) el.classList.add('active');
+  
+  // Update nav tabs
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.toLowerCase().replace(/s$/, '').includes(id.split('-')[0])) {
+      t.classList.add('active');
+    }
+  });
+  
+  // Update sidebar
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('active');
+    const text = n.textContent.trim().toLowerCase();
+    if (id === 'dashboard' && text === 'dashboard') n.classList.add('active');
+    if (id === 'vendors' && text === 'vendors') n.classList.add('active');
+    if (id === 'vendor-detail' && text === 'vendors') n.classList.add('active');
+    if (id === 'purchase-orders' && text.includes('purchase orders')) n.classList.add('active');
+    if (id === 'invoices' && text === 'invoices') n.classList.add('active');
+    if (id === 'settings' && text === 'settings') n.classList.add('active');
+  });
+
+  // Show/hide sidebar for login
+  const sidebar = document.getElementById('sidebar');
+  const layout = document.querySelector('.app-layout');
+  if (id === 'login') {
+    sidebar.style.display = 'none';
+    document.querySelector('.main-content').style.marginLeft = '0';
+  } else {
+    sidebar.style.display = '';
+    document.querySelector('.main-content').style.marginLeft = '';
+  }
+}
+
+// Initialize
+showScreen('login');
+</script>
+
+</body>
+</html>
