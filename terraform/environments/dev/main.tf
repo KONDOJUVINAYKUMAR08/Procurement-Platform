@@ -21,13 +21,13 @@ variable "aws_region" {
 variable "frontend_ami_id" {
   type        = string
   description = "Custom AMI ID baked for the Frontend (React + Nginx)"
-  default     = "ami-xxxxxxxxxxxxxxxxx" # Replace after baking AMI
+  default     = "ami-0a149d868c070e6a8"
 }
 
 variable "backend_ami_id" {
   type        = string
   description = "Custom AMI ID baked for the Backend (Node.js API Gateway)"
-  default     = "ami-xxxxxxxxxxxxxxxxx" # Replace after baking AMI
+  default     = "ami-00a138763f5f1e0e9"
 }
 
 variable "s3_bucket_name" {

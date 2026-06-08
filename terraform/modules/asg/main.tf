@@ -36,6 +36,8 @@ resource "aws_launch_template" "main" {
   image_id      = var.ami_id
   instance_type = var.instance_type
 
+  key_name = "vinay3"
+  
   iam_instance_profile {
     name = var.iam_instance_profile
   }

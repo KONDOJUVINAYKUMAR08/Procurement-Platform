@@ -44,7 +44,7 @@ resource "aws_lb_target_group" "main" {
   vpc_id   = var.vpc_id
 
   health_check {
-    path                = var.internal ? "/api/v1/health" : "/"
+    path                = var.internal ? "/api/health" : "/"
     healthy_threshold   = 2
     unhealthy_threshold = 5
     timeout             = 5
