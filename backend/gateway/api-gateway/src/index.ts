@@ -69,12 +69,12 @@ export const bootstrapApp = async (): Promise<import('express').Express> => {
     apiRouter.use(financeRoutes);
     apiRouter.use(documentRoutes);
 
-    app.use('/api', apiRouter);
-
     // Health check
     app.get('/api/health', (req, res) => {
       res.status(200).json({ status: 'ok', service: 'api-gateway', timestamp: new Date() });
     });
+
+    app.use('/api', apiRouter);
 
     // Static files in production
     if (process.env.NODE_ENV === 'production') {
