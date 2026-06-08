@@ -190,13 +190,12 @@ scp -i your-key.pem procurement-platform.tar.gz ubuntu@<instance-public-ip>:/tmp
 SSH into the instance and run:
 
 ```bash
-# Extract the project
-sudo mkdir -p /opt/procurement-platform
-sudo tar -xzf /tmp/procurement-platform.tar.gz -C /opt/procurement-platform
-sudo chown -R ubuntu:ubuntu /opt/procurement-platform
+# Extract the project to your home directory
+mkdir -p ~/procurement-platform
+tar -xzf /tmp/procurement-platform.tar.gz -C ~/procurement-platform
 
 # Run the backend setup script
-cd /opt/procurement-platform
+cd ~/procurement-platform
 sudo bash scripts/ami-setup/setup-backend.sh
 ```
 
@@ -210,10 +209,10 @@ The script will:
 
 ```bash
 # Check PM2 status
-pm2 status
+sudo pm2 status
 
 # Check application logs
-pm2 logs procurement-api-gateway --lines 50
+sudo pm2 logs procurement-api-gateway --lines 50
 
 # Test the health endpoint
 curl http://localhost:5000/api/health
@@ -242,17 +241,15 @@ curl http://localhost:5000/api/health
 Launch a fresh new Ubuntu instance (same way as Step 1), SSH in, copy the project, then run:
 
 ```bash
-sudo mkdir -p /opt/procurement-platform
-sudo tar -xzf /tmp/procurement-platform.tar.gz -C /opt/procurement-platform
-sudo chown -R ubuntu:ubuntu /opt/procurement-platform
+mkdir -p ~/procurement-platform
+tar -xzf /tmp/procurement-platform.tar.gz -C ~/procurement-platform
 
-cd /opt/procurement-platform/frontend
+cd ~/procurement-platform/frontend
 
 # Set the Internal ALB as the API endpoint for the React build
-echo "REACT_APP_API_URL=http://<internal_alb_dns_from_terraform_output>" | \
-  sudo tee /opt/procurement-platform/frontend/.env
+echo "REACT_APP_API_URL=http://<internal_alb_dns_from_terraform_output>" > ~/procurement-platform/frontend/.env
 
-sudo bash /opt/procurement-platform/scripts/ami-setup/setup-frontend.sh
+sudo bash ~/procurement-platform/scripts/ami-setup/setup-frontend.sh
 ```
 
 ### Step 8: Verify the frontend is working

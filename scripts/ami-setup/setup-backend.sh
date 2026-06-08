@@ -31,7 +31,8 @@ npm install -g pm2
 echo "======================================================"
 echo " [4/6] Installing project dependencies..."
 echo "======================================================"
-cd /opt/procurement-platform
+PROJECT_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$PROJECT_ROOT"
 npm run bootstrap   # alias for npm install (hoists all workspace deps)
 
 echo "======================================================"
@@ -59,7 +60,7 @@ NODE_ENV=production \
 PORT=5000 \
 AWS_REGION=us-east-1 \
 SECRET_NAME=procurement/dev/app-config \
-  pm2 start /opt/procurement-platform/backend/gateway/api-gateway/dist/index.js \
+  pm2 start "$PROJECT_ROOT/backend/gateway/api-gateway/dist/index.js" \
     --name "procurement-api-gateway" \
     -i max
 

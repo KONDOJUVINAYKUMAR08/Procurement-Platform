@@ -26,7 +26,8 @@ npm --version
 echo "======================================================"
 echo " [3/6] Installing project dependencies..."
 echo "======================================================"
-cd /opt/procurement-platform
+PROJECT_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$PROJECT_ROOT"
 npm run bootstrap   # installs all workspace dependencies
 
 echo "======================================================"
@@ -36,16 +37,16 @@ echo "======================================================"
 # It must point to the Internal ALB DNS so the React app can
 # call the backend API. Set this before running this script:
 #
-#   echo "REACT_APP_API_URL=http://<INTERNAL_ALB_DNS>" > /opt/procurement-platform/frontend/.env
+#   echo "REACT_APP_API_URL=http://<INTERNAL_ALB_DNS>" > "$PROJECT_ROOT/frontend/.env"
 #
 # If the .env file already exists (set before running this script), use it.
 # Otherwise fall back to a placeholder that must be replaced.
 
-if [ ! -f "/opt/procurement-platform/frontend/.env" ]; then
+if [ ! -f "$PROJECT_ROOT/frontend/.env" ]; then
   echo "⚠️  WARNING: No .env file found for frontend!"
-  echo "⚠️  Create /opt/procurement-platform/frontend/.env with:"
+  echo "⚠️  Create $PROJECT_ROOT/frontend/.env with:"
   echo "⚠️    REACT_APP_API_URL=http://<your-internal-alb-dns>"
-  echo "⚠️  Then rebuild with: cd /opt/procurement-platform && npm run build:frontend"
+  echo "⚠️  Then rebuild with: cd $PROJECT_ROOT && npm run build:frontend"
 fi
 
 npm run build:frontend
@@ -54,7 +55,7 @@ echo "======================================================"
 echo " [5/6] Deploying built files to Nginx web root..."
 echo "======================================================"
 rm -rf /var/www/html/*
-cp -r /opt/procurement-platform/frontend/build/* /var/www/html/
+cp -r "$PROJECT_ROOT/frontend/build/"* /var/www/html/
 
 echo "======================================================"
 echo " [6/6] Configuring Nginx as reverse proxy..."
