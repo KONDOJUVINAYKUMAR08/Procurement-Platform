@@ -1,22 +1,5 @@
-variable "environment" {
-  type = string
-}
-
-variable "s3_bucket_name" {
-  type = string
-}
-
-variable "kms_key_arn" {
-  type    = string
-  default = ""
-}
-
-# ─────────────────────────────────────────────────────────
-# EC2 Instance Role
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_role" "ec2_role" {
   name = "procurement-${var.environment}-ec2-role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -25,20 +8,15 @@ resource "aws_iam_role" "ec2_role" {
       Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
-
   tags = {
     Name        = "procurement-${var.environment}-ec2-role"
     Environment = var.environment
   }
 }
 
-# ─────────────────────────────────────────────────────────
-# DynamoDB Policy
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_policy" "dynamodb_policy" {
   name        = "procurement-${var.environment}-dynamodb-policy"
   description = "Allow EC2 instances to access all DynamoDB tables for procurement platform"
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -61,13 +39,9 @@ resource "aws_iam_policy" "dynamodb_policy" {
   })
 }
 
-# ─────────────────────────────────────────────────────────
-# S3 Policy (document storage)
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_policy" "s3_policy" {
   name        = "procurement-${var.environment}-s3-policy"
   description = "Allow EC2 instances to read/write procurement documents in S3"
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -88,13 +62,9 @@ resource "aws_iam_policy" "s3_policy" {
   })
 }
 
-# ─────────────────────────────────────────────────────────
-# KMS Policy (envelope encryption for S3 & sensitive fields)
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_policy" "kms_policy" {
   name        = "procurement-${var.environment}-kms-policy"
   description = "Allow EC2 instances to use the KMS key for encryption/decryption"
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -111,13 +81,9 @@ resource "aws_iam_policy" "kms_policy" {
   })
 }
 
-# ─────────────────────────────────────────────────────────
-# Secrets Manager Policy (fetch JWT secrets, config)
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_policy" "secrets_policy" {
   name        = "procurement-${var.environment}-secrets-policy"
   description = "Allow EC2 instances to read application secrets from Secrets Manager"
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -131,13 +97,9 @@ resource "aws_iam_policy" "secrets_policy" {
   })
 }
 
-# ─────────────────────────────────────────────────────────
-# CloudWatch Logs Policy (application logs streaming)
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_policy" "cloudwatch_policy" {
   name        = "procurement-${var.environment}-cloudwatch-policy"
   description = "Allow EC2 instances to push logs to CloudWatch"
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -153,9 +115,6 @@ resource "aws_iam_policy" "cloudwatch_policy" {
   })
 }
 
-# ─────────────────────────────────────────────────────────
-# Policy Attachments
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_role_policy_attachment" "ssm_core" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -186,18 +145,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_attach" {
   policy_arn = aws_iam_policy.cloudwatch_policy.arn
 }
 
-# ─────────────────────────────────────────────────────────
-# Instance Profile (attached to EC2 instances via Launch Template)
-# ─────────────────────────────────────────────────────────
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "procurement-${var.environment}-ec2-profile"
   role = aws_iam_role.ec2_role.name
-}
-
-output "instance_profile_name" {
-  value = aws_iam_instance_profile.ec2_profile.name
-}
-
-output "ec2_role_arn" {
-  value = aws_iam_role.ec2_role.arn
 }

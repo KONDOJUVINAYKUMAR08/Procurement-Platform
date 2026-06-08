@@ -1,37 +1,10 @@
-variable "name" {
-  type = string
-}
-
-variable "environment" {
-  type = string
-}
-
-variable "vpc_id" {
-  type = string
-}
-
-variable "subnets" {
-  type = list(string)
-}
-
-variable "security_group_id" {
-  type = string
-}
-
-variable "internal" {
-  type = bool
-  default = false
-}
-
 resource "aws_lb" "main" {
   name               = "procurement-${var.environment}-${var.name}"
   internal           = var.internal
   load_balancer_type = "application"
   security_groups    = [var.security_group_id]
   subnets            = var.subnets
-
   enable_deletion_protection = false
-
   tags = {
     Environment = var.environment
   }
@@ -42,7 +15,6 @@ resource "aws_lb_target_group" "main" {
   port     = var.internal ? 5000 : 80
   protocol = "HTTP"
   vpc_id   = var.vpc_id
-
   health_check {
     path                = var.internal ? "/api/health" : "/"
     healthy_threshold   = 2
@@ -57,17 +29,35 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
+  default_action {
+    type             = var.certificate_arn != "" ? "redirect" : "forward"
+    target_group_arn = var.certificate_arn != "" ? null : aws_lb_target_group.main.arn
+    dynamic "redirect" {
+      for_each = var.certificate_arn != "" ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  }
+}
 
+resource "aws_lb_listener" "https" {
+  count             = var.certificate_arn != "" ? 1 : 0
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.certificate_arn
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.main.arn
   }
 }
 
-output "alb_dns_name" {
-  value = aws_lb.main.dns_name
-}
-
-output "target_group_arn" {
-  value = aws_lb_target_group.main.arn
+resource "aws_wafv2_web_acl_association" "main" {
+  count        = var.waf_web_acl_arn != "" ? 1 : 0
+  resource_arn = aws_lb.main.arn
+  web_acl_arn  = var.waf_web_acl_arn
 }
