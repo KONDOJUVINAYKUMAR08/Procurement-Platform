@@ -1,5 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+
+process.env.AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
 import { connectDatabase } from '@procurement/common';
 import { User } from '@procurement/identity-service';
 import { Vendor, PurchaseRequest, PurchaseOrder, Contract } from '@procurement/procurement-service';
@@ -12,15 +16,20 @@ const randomItem = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length
 const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 const clearTable = async (model: any) => {
-  const items = await model.scan().exec();
-  for (const item of items) {
-    await model.delete(item._id);
+  try {
+    const items = await model.scan().exec();
+    const deleteOps = items.map((item: any) => model.delete({ _id: item._id }));
+    await Promise.all(deleteOps);
+    console.log(`  Cleared ${items.length} items from ${model.name}`);
+  } catch (err) {
+    // Table may not exist yet — safe to ignore
+    console.log(`  Skipping clear for ${model.name} (table may not exist yet)`);
   }
 };
 
 const seedData = async () => {
   try {
-    connectDatabase();
+    await connectDatabase();
     console.log('Connected to DynamoDB');
 
     // Clear existing data

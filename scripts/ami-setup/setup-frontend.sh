@@ -1,49 +1,110 @@
 #!/bin/bash
-# ==========================================
-# Frontend EC2 AMI Setup Script (Amazon Linux 2023)
-# ==========================================
+# ============================================================
+# Frontend AMI Setup Script — Ubuntu 22.04 LTS
+# Procurement Platform — React App served by Nginx
+# ============================================================
+set -euo pipefail
 
-# 1. Update OS and Install dependencies
-dnf update -y
-dnf install -y git nginx curl
+export DEBIAN_FRONTEND=noninteractive
 
-# 2. Install Node.js
-curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-dnf install -y nodejs
+echo "======================================================"
+echo " [1/6] Updating OS packages..."
+echo "======================================================"
+apt-get update -y
+apt-get upgrade -y
+apt-get install -y git curl nginx
 
-# 3. Clone Repository (replace with your repo URL or S3 download)
-# git clone https://github.com/your-org/procurement-platform.git /opt/procurement-platform
-# cd /opt/procurement-platform
+echo "======================================================"
+echo " [2/6] Installing Node.js 20 (via NodeSource)..."
+echo "======================================================"
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
 
-# NOTE: For baking an AMI, you might copy files directly into the image rather than cloning.
-# Assuming files are in /opt/procurement-platform:
-cd /opt/procurement-platform/frontend
+node --version
+npm --version
 
-# 4. Install Dependencies and Build
-npm install
-# Ensure environment variables point to the internal ALB for the backend
-echo "REACT_APP_API_URL=http://internal-alb-dns-name" > .env
-npm run build
+echo "======================================================"
+echo " [3/6] Installing project dependencies..."
+echo "======================================================"
+cd /opt/procurement-platform
+npm run bootstrap   # installs all workspace dependencies
 
-# 5. Configure Nginx
-rm -rf /usr/share/nginx/html/*
-cp -r build/* /usr/share/nginx/html/
+echo "======================================================"
+echo " [4/6] Building the React frontend..."
+echo "======================================================"
+# REACT_APP_API_URL is baked into the JS bundle at build time.
+# It must point to the Internal ALB DNS so the React app can
+# call the backend API. Set this before running this script:
+#
+#   echo "REACT_APP_API_URL=http://<INTERNAL_ALB_DNS>" > /opt/procurement-platform/frontend/.env
+#
+# If the .env file already exists (set before running this script), use it.
+# Otherwise fall back to a placeholder that must be replaced.
 
-cat << 'EOF' > /etc/nginx/conf.d/procurement.conf
+if [ ! -f "/opt/procurement-platform/frontend/.env" ]; then
+  echo "⚠️  WARNING: No .env file found for frontend!"
+  echo "⚠️  Create /opt/procurement-platform/frontend/.env with:"
+  echo "⚠️    REACT_APP_API_URL=http://<your-internal-alb-dns>"
+  echo "⚠️  Then rebuild with: cd /opt/procurement-platform && npm run build:frontend"
+fi
+
+npm run build:frontend
+
+echo "======================================================"
+echo " [5/6] Deploying built files to Nginx web root..."
+echo "======================================================"
+rm -rf /var/www/html/*
+cp -r /opt/procurement-platform/frontend/build/* /var/www/html/
+
+echo "======================================================"
+echo " [6/6] Configuring Nginx as reverse proxy..."
+echo "======================================================"
+# Remove default Nginx config
+rm -f /etc/nginx/sites-enabled/default
+
+# Write procurement Nginx config
+cat > /etc/nginx/sites-available/procurement << 'NGINX_CONFIG'
 server {
     listen 80;
     server_name _;
-    root /usr/share/nginx/html;
+
+    root /var/www/html;
     index index.html;
 
+    # React SPA — serve index.html for all routes
     location / {
         try_files $uri $uri/ /index.html;
     }
+
+    # Gzip for performance
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+    gzip_min_length 1000;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
 }
-EOF
+NGINX_CONFIG
 
-# 6. Enable and start Nginx
+# Enable the config
+ln -sf /etc/nginx/sites-available/procurement /etc/nginx/sites-enabled/procurement
+
+# Test Nginx config is valid
+nginx -t
+
+# Enable and start Nginx
 systemctl enable nginx
-systemctl start nginx
+systemctl restart nginx
 
-echo "Frontend AMI Setup Complete!"
+echo ""
+echo "======================================================"
+echo " Frontend setup complete!"
+echo " ✓ Node.js $(node --version) installed"
+echo " ✓ React app built and served by Nginx on port 80"
+echo " ✓ React → Backend via REACT_APP_API_URL in .env"
+echo ""
+echo " Test with:  curl http://localhost"
+echo " If you see HTML output, the frontend is working."
+echo "======================================================"
