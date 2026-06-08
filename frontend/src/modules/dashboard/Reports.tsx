@@ -78,23 +78,23 @@ const Reports: React.FC = () => {
           <>
             <div className="p-6 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="font-semibold">Procurement Report</h3>
-              <button onClick={() => exportCSV(procurementData?.data?.data?.purchaseOrders || [], 'procurement-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
+              <button onClick={() => exportCSV(procurementData?.data || [], 'procurement-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead><tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">PO Number</th>
-                  <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Vendor</th>
-                  <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Amount</th>
+                  <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Request Title</th>
+                  <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Department</th>
+                  <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Estimated Cost</th>
                   <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Status</th>
                 </tr></thead>
                 <tbody>
-                  {(procurementData?.data?.data?.purchaseOrders || []).map((po: any) => (
-                    <tr key={po._id} className="table-row">
-                      <td className="px-6 py-3 text-sm font-mono text-white">{po.poNumber}</td>
-                      <td className="px-6 py-3 text-sm text-neutral-400">{typeof po.vendor === 'object' ? po.vendor?.vendorName : '—'}</td>
-                      <td className="px-6 py-3 text-sm text-white">{formatCurrency(po.totalAmount)}</td>
-                      <td className="px-6 py-3 text-sm text-neutral-400 capitalize">{po.status}</td>
+                  {(procurementData?.data || []).map((pr: any) => (
+                    <tr key={pr._id} className="table-row">
+                      <td className="px-6 py-3 text-sm text-white">{pr.title}</td>
+                      <td className="px-6 py-3 text-sm text-neutral-400 capitalize">{pr.department}</td>
+                      <td className="px-6 py-3 text-sm text-white">{formatCurrency(pr.estimatedCost)}</td>
+                      <td className="px-6 py-3 text-sm text-neutral-400 capitalize">{pr.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -105,7 +105,7 @@ const Reports: React.FC = () => {
           <>
             <div className="p-6 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="font-semibold">Vendor Report</h3>
-              <button onClick={() => exportCSV(vendorData?.data?.data || [], 'vendor-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
+              <button onClick={() => exportCSV(vendorData?.data || [], 'vendor-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -117,7 +117,7 @@ const Reports: React.FC = () => {
                   <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Rating</th>
                 </tr></thead>
                 <tbody>
-                  {(vendorData?.data?.data || []).map((v: any) => (
+                  {(vendorData?.data || []).map((v: any) => (
                     <tr key={v._id} className="table-row">
                       <td className="px-6 py-3 text-sm text-white">{v.vendorName}</td>
                       <td className="px-6 py-3 text-sm font-mono text-neutral-400">{v.vendorCode}</td>
@@ -134,7 +134,7 @@ const Reports: React.FC = () => {
           <>
             <div className="p-6 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="font-semibold">Invoice Report</h3>
-              <button onClick={() => exportCSV(invoiceData?.data?.data || [], 'invoice-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
+              <button onClick={() => exportCSV(invoiceData?.data || [], 'invoice-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -146,7 +146,7 @@ const Reports: React.FC = () => {
                   <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Status</th>
                 </tr></thead>
                 <tbody>
-                  {(invoiceData?.data?.data || []).map((inv: any) => (
+                  {(invoiceData?.data || []).map((inv: any) => (
                     <tr key={inv._id} className="table-row">
                       <td className="px-6 py-3 text-sm font-mono text-white">{inv.invoiceNumber}</td>
                       <td className="px-6 py-3 text-sm text-neutral-400">{typeof inv.vendor === 'object' ? inv.vendor?.vendorName : '—'}</td>
@@ -163,7 +163,7 @@ const Reports: React.FC = () => {
           <>
             <div className="p-6 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="font-semibold">Contract Report</h3>
-              <button onClick={() => exportCSV(contractData?.data?.data || [], 'contract-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
+              <button onClick={() => exportCSV(contractData?.data || [], 'contract-report')} className="btn-secondary text-xs flex items-center gap-2"><FileDown size={14} /> Export CSV</button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -175,7 +175,7 @@ const Reports: React.FC = () => {
                   <th className="text-left text-xs font-medium text-neutral-500 px-6 py-3">Status</th>
                 </tr></thead>
                 <tbody>
-                  {(contractData?.data?.data || []).map((c: any) => (
+                  {(contractData?.data || []).map((c: any) => (
                     <tr key={c._id} className="table-row">
                       <td className="px-6 py-3 text-sm text-white">{c.contractName}</td>
                       <td className="px-6 py-3 text-sm text-neutral-400">{typeof c.vendor === 'object' ? c.vendor?.vendorName : '—'}</td>

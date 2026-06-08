@@ -18,15 +18,15 @@ const Contracts: React.FC = () => {
   });
 
   const { data: vendorsData } = useQuery({ queryKey: ['vendors-list'], queryFn: () => vendorApi.getAll({ limit: 100 }) });
-  const vendors = vendorsData?.data?.data || [];
+  const vendors = Array.isArray(vendorsData?.items) ? vendorsData.items : [];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => contractApi.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['contracts'] }); setShowCreate(false); },
   });
 
-  const contracts = data?.data?.data || [];
-  const pagination = data?.data?.pagination;
+  const contracts = Array.isArray(data?.items) ? data.items : [];
+  const pagination = data?.pagination;
 
   const daysUntilExpiry = (date: string) => Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 

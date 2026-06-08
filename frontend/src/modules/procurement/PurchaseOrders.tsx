@@ -18,15 +18,15 @@ const PurchaseOrders: React.FC = () => {
   });
 
   const { data: vendorsData } = useQuery({ queryKey: ['vendors-list'], queryFn: () => vendorApi.getAll({ limit: 100 }) });
-  const vendors = vendorsData?.data?.data || [];
+  const vendors = Array.isArray(vendorsData?.items) ? vendorsData.items : [];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => purchaseOrderApi.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); setShowCreate(false); },
   });
 
-  const pos = data?.data?.data || [];
-  const pagination = data?.data?.pagination;
+  const pos = Array.isArray(data?.items) ? data.items : [];
+  const pagination = data?.pagination;
 
   const addItem = () => setForm({ ...form, items: [...form.items, { name: '', description: '', quantity: 1, unitPrice: 0 }] });
   const updateItem = (i: number, field: string, value: any) => { const items = [...form.items]; items[i] = { ...items[i], [field]: value }; setForm({ ...form, items }); };

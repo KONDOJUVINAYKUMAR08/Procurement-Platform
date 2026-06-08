@@ -18,7 +18,7 @@ const PurchaseRequests: React.FC = () => {
   });
 
   const { data: vendorsData } = useQuery({ queryKey: ['vendors-list'], queryFn: () => vendorApi.getAll({ limit: 100 }) });
-  const vendors = vendorsData?.data?.data || [];
+  const vendors = Array.isArray(vendorsData?.items) ? vendorsData.items : [];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => purchaseRequestApi.create(data),
@@ -40,8 +40,8 @@ const PurchaseRequests: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }),
   });
 
-  const prs = data?.data?.data || [];
-  const pagination = data?.data?.pagination;
+  const prs = Array.isArray(data?.items) ? data.items : [];
+  const pagination = data?.pagination;
 
   const priorityColors: Record<string, string> = { low: 'text-neutral-400', medium: 'text-blue-400', high: 'text-amber-400', urgent: 'text-red-400' };
 

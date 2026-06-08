@@ -14,8 +14,8 @@ const AuditLogs: React.FC = () => {
     queryFn: () => auditApi.getAll({ page, limit: 20, entity, action }),
   });
 
-  const logs = data?.data?.data || [];
-  const pagination = data?.data?.pagination;
+  const logs = Array.isArray(data?.items) ? data.items : [];
+  const pagination = data?.pagination;
 
   const actionColors: Record<string, string> = {
     login: 'text-blue-400', create: 'text-emerald-400', update: 'text-amber-400',

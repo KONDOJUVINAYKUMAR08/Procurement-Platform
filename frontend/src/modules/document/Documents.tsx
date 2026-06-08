@@ -25,7 +25,18 @@ const Documents: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents'] }),
   });
 
-  const documents = data?.data?.data || [];
+  const documents = Array.isArray(data?.items) ? data.items : [];
+
+  const handleDownload = async (id: string) => {
+    try {
+      const res = await documentApi.getDownloadUrl(id);
+      if (res?.url) {
+        window.open(res.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    }
+  };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,7 +104,7 @@ const Documents: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-white" title="Download">
+                  <button onClick={() => handleDownload(doc._id)} className="p-2 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-white" title="Download">
                     <Download size={14} />
                   </button>
                   <button onClick={() => deleteMutation.mutate(doc._id)} className="p-2 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-red-400" title="Delete">

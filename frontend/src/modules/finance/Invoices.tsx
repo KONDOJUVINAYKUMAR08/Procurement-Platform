@@ -18,7 +18,7 @@ const Invoices: React.FC = () => {
   });
 
   const { data: vendorsData } = useQuery({ queryKey: ['vendors-list'], queryFn: () => vendorApi.getAll({ limit: 100 }) });
-  const vendors = vendorsData?.data?.data || [];
+  const vendors = Array.isArray(vendorsData?.items) ? vendorsData.items : [];
 
   const createMutation = useMutation({
     mutationFn: (data: any) => invoiceApi.create(data),
@@ -35,8 +35,8 @@ const Invoices: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
   });
 
-  const invoices = data?.data?.data || [];
-  const pagination = data?.data?.pagination;
+  const invoices = Array.isArray(data?.items) ? data.items : [];
+  const pagination = data?.pagination;
 
   return (
     <div className="space-y-6">

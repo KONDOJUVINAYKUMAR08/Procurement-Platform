@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
     queryFn: () => dashboardApi.getStats(),
   });
 
-  const stats = data?.data?.data;
+  const stats = data;
 
   if (isLoading) {
     return (

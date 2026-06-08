@@ -21,7 +21,7 @@ const VendorDetail: React.FC = () => {
     onSuccess: () => navigate('/vendors'),
   });
 
-  const vendor = data?.data?.data;
+  const vendor = data;
 
   if (isLoading) return <div className="space-y-4"><div className="loading-skeleton h-48 rounded-xl" /><div className="loading-skeleton h-64 rounded-xl" /></div>;
   if (!vendor) return <div className="empty-state py-20"><p>Vendor not found</p></div>;

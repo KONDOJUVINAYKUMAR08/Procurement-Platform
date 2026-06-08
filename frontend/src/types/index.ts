@@ -184,8 +184,22 @@ export interface DashboardStats {
   recentActivity: AuditLog[];
 }
 
+export interface Document {
+  _id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  s3Key: string;
+  s3Bucket: string;
+  category: 'contract' | 'invoice' | 'purchase_order' | 'vendor_certificate';
+  relatedId?: string;
+  uploadedBy: string;
+  createdAt: string;
+}
+
 export interface PaginatedResponse<T> {
-  data: T[];
+  items: T[];
   pagination: {
     page: number;
     limit: number;

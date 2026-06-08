@@ -29,7 +29,7 @@ const Notifications: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
-  const notifications = data?.data?.data || [];
+  const notifications = data?.items || [];
 
   return (
     <div className="space-y-6">

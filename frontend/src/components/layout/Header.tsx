@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
     refetchInterval: 30000,
   });
 
-  const unreadCount = unreadData?.data?.data?.count || 0;
+  const unreadCount = typeof unreadData === 'number' ? unreadData : 0;
 
   const handleLogout = () => {
     logout();

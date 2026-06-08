@@ -1,3 +1,20 @@
+/**
+ * API Service Layer
+ *
+ * All functions in this file normalize the backend response shape so that
+ * callers always receive clean, typed data — never nested API wrapper objects.
+ *
+ * Backend response shape (from sendSuccess / sendError in @procurement/utils):
+ *   Single item:  { success, message, data: T }
+ *   List:         { success, message, data: { data: T[], pagination: {...} } }
+ *
+ * Axios stores the HTTP body in response.data.
+ * So the full chain is:
+ *   axiosResponse.data            → { success, message, data: ... }
+ *   axiosResponse.data.data       → inner payload (item or { data, pagination })
+ *   axiosResponse.data.data.data  → array of items (for list endpoints)
+ */
+
 import api from './api';
 import {
   AuthResponse,
@@ -11,117 +28,260 @@ import {
   DashboardStats,
   PaginatedResponse,
   User,
+  Document,
 } from '../types';
 
-// Auth
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Unwrap { success, message, data: T } → T */
+const item = <T>(res: any): T => res.data.data as T;
+
+/** Unwrap { success, message, data: { data: T[], pagination } } → { items, pagination } */
+const list = <T>(res: any): { items: T[]; pagination: PaginatedResponse<T>['pagination'] } => {
+  const payload = res.data?.data ?? res.data ?? {};
+  const items: T[] = Array.isArray(payload?.data) ? payload.data : [];
+  const pagination = payload?.pagination ?? { page: 1, limit: 20, total: 0, totalPages: 0 };
+  return { items, pagination };
+};
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
 export const authApi = {
-  login: (email: string, password: string) =>
-    api.post<{ data: AuthResponse }>('/auth/login', { email, password }),
-  register: (data: any) =>
-    api.post<{ data: AuthResponse }>('/auth/register', data),
-  forgotPassword: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    const res = await api.post('/auth/login', { email, password });
+    return item<AuthResponse>(res);
+  },
+  register: async (data: any): Promise<AuthResponse> => {
+    const res = await api.post('/auth/register', data);
+    return item<AuthResponse>(res);
+  },
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token: string, password: string) =>
     api.post('/auth/reset-password', { token, password }),
-  getProfile: () => api.get<{ data: User }>('/auth/profile'),
-  updateProfile: (data: any) => api.put<{ data: User }>('/auth/profile', data),
+  getProfile: async (): Promise<User> => {
+    const res = await api.get('/auth/profile');
+    return item<User>(res);
+  },
+  updateProfile: async (data: any): Promise<User> => {
+    const res = await api.put('/auth/profile', data);
+    return item<User>(res);
+  },
   logout: () => api.post('/auth/logout'),
+  changePassword: (data: any) => api.post('/auth/change-password', data),
 };
 
-// Dashboard
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
 export const dashboardApi = {
-  getStats: () => api.get<{ data: DashboardStats }>('/dashboard'),
+  getStats: async (): Promise<DashboardStats> => {
+    const res = await api.get('/dashboard');
+    return item<DashboardStats>(res);
+  },
 };
 
-// Vendors
+// ── Vendors ───────────────────────────────────────────────────────────────────
+
 export const vendorApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<Vendor>>('/vendors', { params }),
-  getById: (id: string) => api.get<{ data: Vendor }>(`/vendors/${id}`),
-  create: (data: any) => api.post<{ data: Vendor }>('/vendors', data),
-  update: (id: string, data: any) => api.put<{ data: Vendor }>(`/vendors/${id}`, data),
+  getAll: async (params?: any): Promise<{ items: Vendor[]; pagination: any }> => {
+    const res = await api.get('/vendors', { params });
+    return list<Vendor>(res);
+  },
+  getById: async (id: string): Promise<Vendor> => {
+    const res = await api.get(`/vendors/${id}`);
+    return item<Vendor>(res);
+  },
+  create: async (data: any): Promise<Vendor> => {
+    const res = await api.post('/vendors', data);
+    return item<Vendor>(res);
+  },
+  update: async (id: string, data: any): Promise<Vendor> => {
+    const res = await api.put(`/vendors/${id}`, data);
+    return item<Vendor>(res);
+  },
   delete: (id: string) => api.delete(`/vendors/${id}`),
-  getStats: () => api.get('/vendors/stats'),
+  getStats: async () => {
+    const res = await api.get('/vendors/stats');
+    return item<any>(res);
+  },
 };
 
-// Purchase Requests
+// ── Purchase Requests ─────────────────────────────────────────────────────────
+
 export const purchaseRequestApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<PurchaseRequest>>('/purchase-requests', { params }),
-  getById: (id: string) => api.get<{ data: PurchaseRequest }>(`/purchase-requests/${id}`),
-  create: (data: any) => api.post<{ data: PurchaseRequest }>('/purchase-requests', data),
-  update: (id: string, data: any) => api.put<{ data: PurchaseRequest }>(`/purchase-requests/${id}`, data),
+  getAll: async (params?: any): Promise<{ items: PurchaseRequest[]; pagination: any }> => {
+    const res = await api.get('/purchase-requests', { params });
+    return list<PurchaseRequest>(res);
+  },
+  getById: async (id: string): Promise<PurchaseRequest> => {
+    const res = await api.get(`/purchase-requests/${id}`);
+    return item<PurchaseRequest>(res);
+  },
+  create: async (data: any): Promise<PurchaseRequest> => {
+    const res = await api.post('/purchase-requests', data);
+    return item<PurchaseRequest>(res);
+  },
+  update: async (id: string, data: any): Promise<PurchaseRequest> => {
+    const res = await api.put(`/purchase-requests/${id}`, data);
+    return item<PurchaseRequest>(res);
+  },
   submit: (id: string) => api.post(`/purchase-requests/${id}/submit`),
   approve: (id: string) => api.post(`/purchase-requests/${id}/approve`),
-  reject: (id: string, reason: string) => api.post(`/purchase-requests/${id}/reject`, { reason }),
-  getStats: () => api.get('/purchase-requests/stats'),
+  reject: (id: string, reason: string) =>
+    api.post(`/purchase-requests/${id}/reject`, { reason }),
 };
 
-// Purchase Orders
+// ── Purchase Orders ───────────────────────────────────────────────────────────
+
 export const purchaseOrderApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<PurchaseOrder>>('/purchase-orders', { params }),
-  getById: (id: string) => api.get<{ data: PurchaseOrder }>(`/purchase-orders/${id}`),
-  create: (data: any) => api.post<{ data: PurchaseOrder }>('/purchase-orders', data),
-  update: (id: string, data: any) => api.put<{ data: PurchaseOrder }>(`/purchase-orders/${id}`, data),
-  getStats: () => api.get('/purchase-orders/stats'),
+  getAll: async (params?: any): Promise<{ items: PurchaseOrder[]; pagination: any }> => {
+    const res = await api.get('/purchase-orders', { params });
+    return list<PurchaseOrder>(res);
+  },
+  getById: async (id: string): Promise<PurchaseOrder> => {
+    const res = await api.get(`/purchase-orders/${id}`);
+    return item<PurchaseOrder>(res);
+  },
+  create: async (data: any): Promise<PurchaseOrder> => {
+    const res = await api.post('/purchase-orders', data);
+    return item<PurchaseOrder>(res);
+  },
+  update: async (id: string, data: any): Promise<PurchaseOrder> => {
+    const res = await api.put(`/purchase-orders/${id}`, data);
+    return item<PurchaseOrder>(res);
+  },
 };
 
-// Contracts
+// ── Contracts ─────────────────────────────────────────────────────────────────
+
 export const contractApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<Contract>>('/contracts', { params }),
-  getById: (id: string) => api.get<{ data: Contract }>(`/contracts/${id}`),
-  create: (data: any) => api.post<{ data: Contract }>('/contracts', data),
-  update: (id: string, data: any) => api.put<{ data: Contract }>(`/contracts/${id}`, data),
-  getExpiring: () => api.get('/contracts/expiring'),
-  getStats: () => api.get('/contracts/stats'),
+  getAll: async (params?: any): Promise<{ items: Contract[]; pagination: any }> => {
+    const res = await api.get('/contracts', { params });
+    return list<Contract>(res);
+  },
+  getById: async (id: string): Promise<Contract> => {
+    const res = await api.get(`/contracts/${id}`);
+    return item<Contract>(res);
+  },
+  create: async (data: any): Promise<Contract> => {
+    const res = await api.post('/contracts', data);
+    return item<Contract>(res);
+  },
+  update: async (id: string, data: any): Promise<Contract> => {
+    const res = await api.put(`/contracts/${id}`, data);
+    return item<Contract>(res);
+  },
+  getExpiring: async (): Promise<Contract[]> => {
+    const res = await api.get('/contracts/expiring');
+    const payload = res.data?.data;
+    return Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+  },
 };
 
-// Invoices
+// ── Invoices ──────────────────────────────────────────────────────────────────
+
 export const invoiceApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<Invoice>>('/invoices', { params }),
-  getById: (id: string) => api.get<{ data: Invoice }>(`/invoices/${id}`),
-  create: (data: any) => api.post<{ data: Invoice }>('/invoices', data),
-  update: (id: string, data: any) => api.put<{ data: Invoice }>(`/invoices/${id}`, data),
+  getAll: async (params?: any): Promise<{ items: Invoice[]; pagination: any }> => {
+    const res = await api.get('/invoices', { params });
+    return list<Invoice>(res);
+  },
+  getById: async (id: string): Promise<Invoice> => {
+    const res = await api.get(`/invoices/${id}`);
+    return item<Invoice>(res);
+  },
+  create: async (data: any): Promise<Invoice> => {
+    const res = await api.post('/invoices', data);
+    return item<Invoice>(res);
+  },
+  update: async (id: string, data: any): Promise<Invoice> => {
+    const res = await api.put(`/invoices/${id}`, data);
+    return item<Invoice>(res);
+  },
   approve: (id: string) => api.post(`/invoices/${id}/approve`),
   markAsPaid: (id: string, paymentMethod: string) =>
     api.post(`/invoices/${id}/pay`, { paymentMethod }),
-  getStats: () => api.get('/invoices/stats'),
 };
 
-// Notifications
+// ── Notifications ─────────────────────────────────────────────────────────────
+
 export const notificationApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<Notification>>('/notifications', { params }),
-  getUnreadCount: () => api.get<{ data: { count: number } }>('/notifications/unread-count'),
+  getAll: async (params?: any): Promise<{ items: Notification[]; pagination: any }> => {
+    const res = await api.get('/notifications', { params });
+    return list<Notification>(res);
+  },
+  getUnreadCount: async (): Promise<number> => {
+    const res = await api.get('/notifications/unread-count');
+    const payload = item<{ count: number }>(res);
+    return payload?.count ?? 0;
+  },
   markAsRead: (id: string) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
 };
 
-// Audit Logs
+// ── Audit Logs ────────────────────────────────────────────────────────────────
+
 export const auditApi = {
-  getAll: (params?: any) => api.get<PaginatedResponse<AuditLog>>('/audit-logs', { params }),
+  getAll: async (params?: any): Promise<{ items: AuditLog[]; pagination: any }> => {
+    const res = await api.get('/audit-logs', { params });
+    return list<AuditLog>(res);
+  },
 };
 
-// Users
+// ── Users ─────────────────────────────────────────────────────────────────────
+
 export const userApi = {
-  getAll: () => api.get<{ data: User[] }>('/users'),
-  getById: (id: string) => api.get<{ data: User }>(`/users/${id}`),
-  update: (id: string, data: any) => api.put<{ data: User }>(`/users/${id}`, data),
+  getAll: async (): Promise<User[]> => {
+    const res = await api.get('/users');
+    const payload = res.data?.data;
+    return Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+  },
+  getById: async (id: string): Promise<User> => {
+    const res = await api.get(`/users/${id}`);
+    return item<User>(res);
+  },
+  update: async (id: string, data: any): Promise<User> => {
+    const res = await api.put(`/users/${id}`, data);
+    return item<User>(res);
+  },
   delete: (id: string) => api.delete(`/users/${id}`),
 };
 
-// Documents
+// ── Documents ─────────────────────────────────────────────────────────────────
+
 export const documentApi = {
-  upload: (formData: FormData) =>
-    api.post('/documents/upload', formData, {
+  upload: async (formData: FormData): Promise<Document> => {
+    const res = await api.post('/documents/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  getAll: (params?: any) => api.get('/documents', { params }),
-  getDownloadUrl: (id: string) => api.get(`/documents/${id}/download`),
+    });
+    return item<Document>(res);
+  },
+  getAll: async (params?: any): Promise<{ items: Document[]; pagination: any }> => {
+    const res = await api.get('/documents', { params });
+    return list<Document>(res);
+  },
+  getDownloadUrl: async (id: string): Promise<{ url: string; fileName: string }> => {
+    const res = await api.get(`/documents/${id}/download`);
+    return item<{ url: string; fileName: string }>(res);
+  },
   delete: (id: string) => api.delete(`/documents/${id}`),
 };
 
-// Reports
+// ── Reports ───────────────────────────────────────────────────────────────────
+
 export const reportApi = {
-  vendor: () => api.get('/reports/vendors'),
-  procurement: (params?: any) => api.get('/reports/procurement', { params }),
-  invoice: (params?: any) => api.get('/reports/invoices', { params }),
-  contract: () => api.get('/reports/contracts'),
+  vendor: async (): Promise<{ data: any[]; summary: any[] }> => {
+    const res = await api.get('/reports/vendors');
+    return item<{ data: any[]; summary: any[] }>(res);
+  },
+  procurement: async (params?: any): Promise<{ data: any[]; summary: any[] }> => {
+    const res = await api.get('/reports/procurement', { params });
+    return item<{ data: any[]; summary: any[] }>(res);
+  },
+  invoice: async (params?: any): Promise<{ data: any[]; summary: any[] }> => {
+    const res = await api.get('/reports/invoices', { params });
+    return item<{ data: any[]; summary: any[] }>(res);
+  },
+  contract: async (): Promise<{ data: any[]; summary: any[] }> => {
+    const res = await api.get('/reports/contracts');
+    return item<{ data: any[]; summary: any[] }>(res);
+  },
 };

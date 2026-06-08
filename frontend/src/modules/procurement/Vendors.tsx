@@ -32,8 +32,8 @@ const Vendors: React.FC = () => {
     },
   });
 
-  const vendors = data?.data?.data || [];
-  const pagination = data?.data?.pagination;
+  const vendors = Array.isArray(data?.items) ? data.items : [];
+  const pagination = data?.pagination;
 
   return (
     <div className="space-y-6">

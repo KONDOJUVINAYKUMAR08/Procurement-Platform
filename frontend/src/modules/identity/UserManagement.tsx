@@ -13,7 +13,7 @@ const UserManagement: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 
-  const users = data?.data?.data || [];
+  const users = Array.isArray(data) ? data : [];
 
   const roleColors: Record<string, string> = {
     admin: 'bg-white/10 text-white',
