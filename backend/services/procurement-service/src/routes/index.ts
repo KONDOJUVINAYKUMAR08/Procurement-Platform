@@ -4,7 +4,7 @@ import purchaseRequestRoutes from './purchaseRequest.routes';
 import purchaseOrderRoutes from './purchaseOrder.routes';
 import contractRoutes from './contract.routes';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(vendorRoutes);
 router.use(purchaseRequestRoutes);

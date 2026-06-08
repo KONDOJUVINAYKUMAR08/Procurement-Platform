@@ -5,7 +5,7 @@ import { authenticate, authorize, validate } from '@procurement/middleware';
 import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from '../validators';
 import { ROLES } from '@procurement/types';
 
-const router = Router();
+const router: Router = Router();
 
 // Auth routes
 router.post('/auth/register', validate(registerSchema), authController.register);

@@ -27,7 +27,7 @@ const upload = multer({
   },
 });
 
-export const uploadMiddleware = upload.single('file');
+export const uploadMiddleware: import('express').RequestHandler = upload.single('file');
 
 export class DocumentController {
   async findAll(req: IAuthenticatedRequest, res: Response) {

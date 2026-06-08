@@ -17,9 +17,9 @@ import reportController from './controllers/report.controller';
 import { authenticate, authorize } from '@procurement/middleware';
 import { ROLES } from '@procurement/types';
 
-export const app = express();
+export const app: import('express').Express = express();
 
-export async function bootstrapApp() {
+export const bootstrapApp = async (): Promise<import('express').Express> => {
   try {
     if (process.env.NODE_ENV === 'production') {
       try {

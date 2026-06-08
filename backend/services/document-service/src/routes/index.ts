@@ -5,7 +5,7 @@ import notificationController from '../controllers/notification.controller';
 import { authenticate, authorize } from '@procurement/middleware';
 import { ROLES } from '@procurement/types';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(authenticate);
 

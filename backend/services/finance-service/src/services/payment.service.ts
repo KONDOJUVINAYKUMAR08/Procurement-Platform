@@ -41,7 +41,7 @@ export class PaymentService {
       invoice: invoice._id,
       vendor: invoice.vendor,
       amount: invoice.totalAmount,
-      paymentMethod: data.paymentMethod,
+      paymentMethod: data.paymentMethod as any,
       notes: data.notes || '',
       processedBy: userId,
     });

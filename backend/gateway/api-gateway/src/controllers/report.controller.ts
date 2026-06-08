@@ -1,27 +1,37 @@
 import { Response } from 'express';
 import { IAuthenticatedRequest } from '@procurement/types';
-import { Vendor, PurchaseRequest, PurchaseOrder, Contract } from '@procurement/procurement-service';
-import { Invoice, Payment } from '@procurement/finance-service';
+import { Vendor, PurchaseRequest, Contract } from '@procurement/procurement-service';
+import { Invoice } from '@procurement/finance-service';
 import { sendSuccess, sendError } from '@procurement/utils';
 
 export class ReportController {
   async vendorReport(req: IAuthenticatedRequest, res: Response) {
     try {
-      const vendors = await Vendor.find()
-        .select('vendorName vendorCode status rating address.country createdAt')
-        .sort({ createdAt: -1 });
+      const allVendors = await Vendor.scan().exec();
+      const vendors = allVendors.map((v: any) => ({
+        _id: v._id,
+        vendorName: v.vendorName,
+        vendorCode: v.vendorCode,
+        status: v.status,
+        rating: v.rating,
+        country: v.address?.country,
+        createdAt: v.createdAt
+      })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      const stats = await Vendor.aggregate([
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
-            avgRating: { $avg: '$rating' },
-          },
-        },
-      ]);
+      const statsMap: any = {};
+      allVendors.forEach((v: any) => {
+        if (!statsMap[v.status]) statsMap[v.status] = { _id: v.status, count: 0, totalRating: 0 };
+        statsMap[v.status].count++;
+        statsMap[v.status].totalRating += (v.rating || 0);
+      });
+      
+      const summary = Object.values(statsMap).map((s: any) => ({
+        _id: s._id,
+        count: s.count,
+        avgRating: s.count > 0 ? s.totalRating / s.count : 0
+      }));
 
-      return sendSuccess(res, { data: vendors, summary: stats });
+      return sendSuccess(res, { data: vendors, summary });
     } catch (error: any) {
       return sendError(res, error.message);
     }
@@ -30,37 +40,36 @@ export class ReportController {
   async procurementReport(req: IAuthenticatedRequest, res: Response) {
     try {
       const { startDate, endDate, department } = req.query;
-      const matchStage: any = {};
-
-      if (startDate && endDate) {
-        matchStage.createdAt = {
-          $gte: new Date(startDate as string),
-          $lte: new Date(endDate as string),
-        };
-      }
+      let scanReq = PurchaseRequest.scan();
+      
       if (department) {
-        matchStage.department = department;
+        scanReq = scanReq.where('department').eq(department);
       }
 
-      const requests = await PurchaseRequest.find(matchStage)
-        .populate('vendor', 'vendorName')
-        .sort({ createdAt: -1 });
+      const allRequests: any[] = await scanReq.exec();
+      
+      let filtered = allRequests;
+      if (startDate && endDate) {
+        const start = new Date(startDate as string).getTime();
+        const end = new Date(endDate as string).getTime();
+        filtered = allRequests.filter((r: any) => {
+          const t = new Date(r.createdAt).getTime();
+          return t >= start && t <= end;
+        });
+      }
 
-      const summary = await PurchaseRequest.aggregate([
-        { $match: matchStage },
-        {
-          $group: {
-            _id: '$department',
-            totalRequests: { $sum: 1 },
-            approvedRequests: {
-              $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] },
-            },
-            totalValue: { $sum: '$estimatedCost' },
-          },
-        },
-      ]);
+      const requests = filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      return sendSuccess(res, { data: requests, summary });
+      const summaryMap: any = {};
+      filtered.forEach((r: any) => {
+        const d = r.department;
+        if (!summaryMap[d]) summaryMap[d] = { _id: d, totalRequests: 0, approvedRequests: 0, totalValue: 0 };
+        summaryMap[d].totalRequests++;
+        if (r.status === 'approved') summaryMap[d].approvedRequests++;
+        summaryMap[d].totalValue += (r.estimatedCost || 0);
+      });
+
+      return sendSuccess(res, { data: requests, summary: Object.values(summaryMap) });
     } catch (error: any) {
       return sendError(res, error.message);
     }
@@ -69,36 +78,33 @@ export class ReportController {
   async invoiceReport(req: IAuthenticatedRequest, res: Response) {
     try {
       const { startDate, endDate, status } = req.query;
-      const matchStage: any = {};
+      let scanReq = Invoice.scan();
+      if (status) scanReq = scanReq.where('status').eq(status);
 
+      const allInvoices: any[] = await scanReq.exec();
+      
+      let filtered = allInvoices;
       if (startDate && endDate) {
-        matchStage.createdAt = {
-          $gte: new Date(startDate as string),
-          $lte: new Date(endDate as string),
-        };
+        const start = new Date(startDate as string).getTime();
+        const end = new Date(endDate as string).getTime();
+        filtered = allInvoices.filter((r: any) => {
+          const t = new Date(r.createdAt).getTime();
+          return t >= start && t <= end;
+        });
       }
-      if (status) {
-        matchStage.status = status;
-      }
 
-      const invoices = await Invoice.find(matchStage)
-        .populate('vendor', 'vendorName')
-        .populate('purchaseOrder', 'poNumber')
-        .sort({ createdAt: -1 });
+      const invoices = filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      const summary = await Invoice.aggregate([
-        { $match: matchStage },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
-            totalAmount: { $sum: '$totalAmount' },
-            totalTax: { $sum: '$tax' },
-          },
-        },
-      ]);
+      const summaryMap: any = {};
+      filtered.forEach((i: any) => {
+        const s = i.status;
+        if (!summaryMap[s]) summaryMap[s] = { _id: s, count: 0, totalAmount: 0, totalTax: 0 };
+        summaryMap[s].count++;
+        summaryMap[s].totalAmount += (i.totalAmount || 0);
+        summaryMap[s].totalTax += (i.tax || 0);
+      });
 
-      return sendSuccess(res, { data: invoices, summary });
+      return sendSuccess(res, { data: invoices, summary: Object.values(summaryMap) });
     } catch (error: any) {
       return sendError(res, error.message);
     }
@@ -106,21 +112,22 @@ export class ReportController {
 
   async contractReport(req: IAuthenticatedRequest, res: Response) {
     try {
-      const contracts = await Contract.find()
-        .populate('vendor', 'vendorName')
-        .sort({ expiryDate: 1 });
+      const allContracts = await Contract.scan().exec();
+      const contracts = allContracts.sort((a: any, b: any) => {
+        const d1 = a.expiryDate ? new Date(a.expiryDate).getTime() : 0;
+        const d2 = b.expiryDate ? new Date(b.expiryDate).getTime() : 0;
+        return d1 - d2;
+      });
 
-      const summary = await Contract.aggregate([
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
-            totalValue: { $sum: '$contractValue' },
-          },
-        },
-      ]);
+      const summaryMap: any = {};
+      allContracts.forEach((c: any) => {
+        const s = c.status;
+        if (!summaryMap[s]) summaryMap[s] = { _id: s, count: 0, totalValue: 0 };
+        summaryMap[s].count++;
+        summaryMap[s].totalValue += (c.contractValue || 0);
+      });
 
-      return sendSuccess(res, { data: contracts, summary });
+      return sendSuccess(res, { data: contracts, summary: Object.values(summaryMap) });
     } catch (error: any) {
       return sendError(res, error.message);
     }

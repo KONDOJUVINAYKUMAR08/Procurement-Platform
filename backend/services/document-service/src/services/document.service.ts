@@ -42,7 +42,7 @@ export class DocumentService {
       size: file.size,
       s3Key,
       s3Bucket: config.aws.s3Bucket,
-      category,
+      category: category as any,
       relatedId,
       uploadedBy: userId,
     });

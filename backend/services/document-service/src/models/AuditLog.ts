@@ -43,7 +43,7 @@ const auditLogSchema = new dynamoose.Schema(
     ipAddress: { type: String, required: true },
     userAgent: { type: String, required: true },
   },
-  { timestamps: { createdAt: true, updatedAt: false } }
+  { timestamps: true }
 );
 
 export const AuditLog = dynamoose.model<AuditLogDocument>('Document_AuditLog', auditLogSchema, {

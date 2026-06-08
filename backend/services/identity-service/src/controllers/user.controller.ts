@@ -32,9 +32,9 @@ export class UserController {
 
   async update(req: IAuthenticatedRequest, res: Response) {
     try {
-      const user = await User.update({ _id: req.params.id }, req.body);
+      const user: any = await User.update({ _id: req.params.id }, req.body);
       if (!user) return sendError(res, 'User not found', 404);
-      const copy = { ...(user.toJSON ? user.toJSON() : user) } as any;
+      const copy = { ...(user.toJSON && typeof user.toJSON === 'function' ? user.toJSON() : user) } as any;
       delete copy.password;
       return sendSuccess(res, copy, 'User updated');
     } catch (error: any) {

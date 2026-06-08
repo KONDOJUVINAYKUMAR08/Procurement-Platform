@@ -4,7 +4,7 @@ import { authenticate, authorize, validate, auditLog } from '@procurement/middle
 import { contractSchema } from '../validators';
 import { ROLES } from '@procurement/types';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(authenticate);
 

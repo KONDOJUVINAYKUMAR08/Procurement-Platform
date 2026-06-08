@@ -39,6 +39,7 @@ export class NotificationService {
   async createSystemNotification(data: { title: string; message: string; type: string; relatedId?: string; relatedModel?: string }) {
     await Notification.create({
       ...data,
+      type: data.type as any,
       _id: uuidv4(),
       userId: 'SYSTEM', 
     });
