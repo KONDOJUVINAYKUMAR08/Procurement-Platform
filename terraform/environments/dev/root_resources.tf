@@ -6,6 +6,10 @@ resource "aws_kms_key" "procurement_key" {
     Name        = "procurement-dev-kms-key"
     Environment = "dev"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_kms_alias" "procurement_key_alias" {
@@ -18,6 +22,10 @@ resource "aws_s3_bucket" "documents" {
   tags = {
     Name        = "procurement-dev-documents-08"
     Environment = "dev"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -56,6 +64,10 @@ resource "aws_secretsmanager_secret" "app_secrets" {
     Name        = "procurement-dev-secrets"
     Environment = "dev"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "app_secrets" {
@@ -68,7 +80,7 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
     AWS_KMS_KEY_ID     = aws_kms_key.procurement_key.arn
     NODE_ENV           = "production"
     PORT               = "5000"
-    CORS_ORIGIN        = "http://${module.public_alb.alb_dns_name}"
+    CORS_ORIGIN        = "https://procurement.rxpulse.online"
   })
 }
 
@@ -97,6 +109,10 @@ resource "aws_dynamodb_table" "users" {
     Name        = "procurement-dev-users"
     Environment = "dev"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_dynamodb_table" "purchase_orders" {
@@ -114,6 +130,10 @@ resource "aws_dynamodb_table" "purchase_orders" {
   tags = {
     Name        = "procurement-dev-purchase-orders"
     Environment = "dev"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -133,6 +153,10 @@ resource "aws_dynamodb_table" "vendors" {
     Name        = "procurement-dev-vendors"
     Environment = "dev"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_dynamodb_table" "invoices" {
@@ -150,6 +174,10 @@ resource "aws_dynamodb_table" "invoices" {
   tags = {
     Name        = "procurement-dev-invoices"
     Environment = "dev"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -169,6 +197,10 @@ resource "aws_dynamodb_table" "contracts" {
     Name        = "procurement-dev-contracts"
     Environment = "dev"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_dynamodb_table" "documents" {
@@ -186,5 +218,9 @@ resource "aws_dynamodb_table" "documents" {
   tags = {
     Name        = "procurement-dev-documents"
     Environment = "dev"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }

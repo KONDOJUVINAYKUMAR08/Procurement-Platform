@@ -23,11 +23,13 @@ module "iam" {
 }
 
 module "route53" {
-  source       = "../../modules/route53"
-  domain_name  = var.domain_name
-  subdomain    = var.subdomain
-  alb_dns_name = module.public_alb.alb_dns_name
-  alb_zone_id  = module.public_alb.zone_id
+  source                = "../../modules/route53"
+  domain_name           = var.domain_name
+  subdomain             = var.subdomain
+  alb_dns_name          = module.public_alb.alb_dns_name
+  alb_zone_id           = module.public_alb.zone_id
+  internal_alb_dns_name = module.internal_alb.alb_dns_name
+  internal_alb_zone_id  = module.internal_alb.zone_id
 }
 
 module "acm" {

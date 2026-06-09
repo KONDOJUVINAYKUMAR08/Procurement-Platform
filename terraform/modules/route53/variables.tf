@@ -10,3 +10,9 @@ variable "alb_dns_name" {
 variable "alb_zone_id" {
   type = string
 }
+variable "internal_alb_dns_name" {
+  type = string
+}
+variable "internal_alb_zone_id" {
+  type = string
+}

@@ -19,9 +19,9 @@ resource "aws_launch_template" "main" {
 resource "aws_autoscaling_group" "main" {
   name                = "procurement-${var.environment}-${var.name}-asg"
   vpc_zone_identifier = var.vpc_zone_identifier
-  desired_capacity    = 2
-  max_size            = 4
-  min_size            = 2
+  desired_capacity    = var.desired_capacity
+  max_size            = var.max_size
+  min_size            = var.min_size
   target_group_arns   = [var.target_group_arn]
   launch_template {
     id      = aws_launch_template.main.id
