@@ -70,11 +70,21 @@ resource "aws_secretsmanager_secret" "app_secrets" {
   }
 }
 
+resource "random_string" "jwt_secret" {
+  length  = 64
+  special = false
+}
+
+resource "random_string" "jwt_refresh_secret" {
+  length  = 64
+  special = false
+}
+
 resource "aws_secretsmanager_secret_version" "app_secrets" {
   secret_id = aws_secretsmanager_secret.app_secrets.id
   secret_string = jsonencode({
-    JWT_SECRET         = "CHANGE_ME_strong_jwt_secret_min_32_chars"
-    JWT_REFRESH_SECRET = "CHANGE_ME_strong_jwt_refresh_secret_min_32"
+    JWT_SECRET         = random_string.jwt_secret.result
+    JWT_REFRESH_SECRET = random_string.jwt_refresh_secret.result
     AWS_REGION         = var.aws_region
     AWS_S3_BUCKET      = var.s3_bucket_name
     AWS_KMS_KEY_ID     = aws_kms_key.procurement_key.arn
@@ -84,143 +94,4 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
   })
 }
 
-resource "aws_dynamodb_table" "users" {
-  name         = "procurement-dev-users"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  attribute {
-    name = "id"
-    type = "S"
-  }
-  attribute {
-    name = "email"
-    type = "S"
-  }
-  global_secondary_index {
-    name            = "email-index"
-    hash_key        = "email"
-    projection_type = "ALL"
-  }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.procurement_key.arn
-  }
-  tags = {
-    Name        = "procurement-dev-users"
-    Environment = "dev"
-  }
 
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_dynamodb_table" "purchase_orders" {
-  name         = "procurement-dev-purchase-orders"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  attribute {
-    name = "id"
-    type = "S"
-  }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.procurement_key.arn
-  }
-  tags = {
-    Name        = "procurement-dev-purchase-orders"
-    Environment = "dev"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_dynamodb_table" "vendors" {
-  name         = "procurement-dev-vendors"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  attribute {
-    name = "id"
-    type = "S"
-  }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.procurement_key.arn
-  }
-  tags = {
-    Name        = "procurement-dev-vendors"
-    Environment = "dev"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_dynamodb_table" "invoices" {
-  name         = "procurement-dev-invoices"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  attribute {
-    name = "id"
-    type = "S"
-  }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.procurement_key.arn
-  }
-  tags = {
-    Name        = "procurement-dev-invoices"
-    Environment = "dev"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_dynamodb_table" "contracts" {
-  name         = "procurement-dev-contracts"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  attribute {
-    name = "id"
-    type = "S"
-  }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.procurement_key.arn
-  }
-  tags = {
-    Name        = "procurement-dev-contracts"
-    Environment = "dev"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_dynamodb_table" "documents" {
-  name         = "procurement-dev-documents"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  attribute {
-    name = "id"
-    type = "S"
-  }
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.procurement_key.arn
-  }
-  tags = {
-    Name        = "procurement-dev-documents"
-    Environment = "dev"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}

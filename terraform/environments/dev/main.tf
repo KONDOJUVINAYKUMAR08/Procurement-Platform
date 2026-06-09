@@ -80,6 +80,47 @@ module "frontend_asg" {
   iam_instance_profile = module.iam.instance_profile_name
   ami_id               = var.frontend_ami_id
   instance_type        = "t3.small"
+  user_data            = base64encode(<<-EOF
+    #!/bin/bash
+    cat << 'NGINX_CONF' > /etc/nginx/sites-available/procurement
+    server {
+        listen 80;
+        server_name _;
+
+        root /var/www/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        location /api {
+            proxy_pass http://${module.internal_alb.alb_dns_name};
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        gzip on;
+        gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+        gzip_min_length 1000;
+
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+    }
+    NGINX_CONF
+
+    ln -sf /etc/nginx/sites-available/procurement /etc/nginx/sites-enabled/procurement
+    rm -f /etc/nginx/sites-enabled/default
+    systemctl restart nginx || systemctl reload nginx
+  EOF
+  )
 }
 
 module "backend_asg" {

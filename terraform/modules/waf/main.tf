@@ -17,6 +17,13 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
+
+        rule_action_override {
+          name = "SizeRestrictions_BODY"
+          action_to_use {
+            count {}
+          }
+        }
       }
     }
     visibility_config {
@@ -27,8 +34,55 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   rule {
-    name     = "IPRateLimit"
+    name     = "SizeRestrictions_BODY_Custom"
     priority = 2
+    action {
+      block {}
+    }
+    statement {
+      and_statement {
+        statement {
+          size_constraint_statement {
+            field_to_match {
+              body {}
+            }
+            comparison_operator = "GT"
+            size                = 8192
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+        statement {
+          not_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  uri_path {}
+                }
+                positional_constraint = "EXACTLY"
+                search_string         = "/api/documents/upload"
+                text_transformation {
+                  priority = 0
+                  type     = "NONE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "SizeRestrictionsBodyCustomMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "IPRateLimit"
+    priority = 3
     action {
       block {}
     }

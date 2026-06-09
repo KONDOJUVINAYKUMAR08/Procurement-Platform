@@ -28,3 +28,34 @@ variable "subdomain" {
 variable "alert_email" {
   type = string
 }
+
+variable "users_table_name" {
+  type    = string
+  default = "procurement-dev-users"
+}
+
+variable "vendors_table_name" {
+  type    = string
+  default = "procurement-dev-vendors"
+}
+
+variable "contracts_table_name" {
+  type    = string
+  default = "procurement-dev-contracts"
+}
+
+variable "purchase_orders_table_name" {
+  type    = string
+  default = "procurement-dev-purchase-orders"
+}
+
+variable "invoices_table_name" {
+  type    = string
+  default = "procurement-dev-invoices"
+}
+
+variable "documents_table_name" {
+  type    = string
+  default = "procurement-dev-documents"
+}
+
