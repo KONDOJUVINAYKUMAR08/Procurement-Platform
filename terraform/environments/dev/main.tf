@@ -1,3 +1,24 @@
+module "kms" {
+  source      = "../../modules/kms"
+  environment = "dev"
+}
+
+module "s3" {
+  source      = "../../modules/s3"
+  bucket_name = var.s3_bucket_name
+  environment = "dev"
+  kms_key_arn = module.kms.key_arn
+}
+
+module "secretsmanager" {
+  source         = "../../modules/secretsmanager"
+  environment    = "dev"
+  kms_key_id     = module.kms.key_arn
+  aws_region     = var.aws_region
+  s3_bucket_name = var.s3_bucket_name
+  public_alb_dns = module.public_alb.alb_dns_name
+}
+
 module "vpc" {
   source                   = "../../modules/networking"
   environment              = "dev"
@@ -19,7 +40,7 @@ module "iam" {
   source         = "../../modules/iam"
   environment    = "dev"
   s3_bucket_name = var.s3_bucket_name
-  kms_key_arn    = aws_kms_key.procurement_key.arn
+  kms_key_arn    = module.kms.key_arn
 }
 
 module "route53" {
@@ -135,8 +156,6 @@ module "backend_asg" {
   instance_type        = "t3.small"
 }
 
-
-
 module "sns" {
   source        = "../../modules/sns"
   environment   = "dev"
@@ -155,12 +174,53 @@ module "cloudwatch" {
   internal_target_group_arn_suffix = module.internal_alb.target_group_arn_suffix
 }
 
-# module "cloudtrail" {
-#   source      = "../../modules/cloudtrail"
-#   environment = "dev"
-# }
+# State migration moves
+moved {
+  from = aws_kms_key.procurement_key
+  to   = module.kms.aws_kms_key.procurement_key
+}
 
-# module "config" {
-#   source      = "../../modules/config"
-#   environment = "dev"
-# }
+moved {
+  from = aws_kms_alias.procurement_key_alias
+  to   = module.kms.aws_kms_alias.procurement_key_alias
+}
+
+moved {
+  from = aws_s3_bucket.documents
+  to   = module.s3.aws_s3_bucket.documents
+}
+
+moved {
+  from = aws_s3_bucket_versioning.documents
+  to   = module.s3.aws_s3_bucket_versioning.documents
+}
+
+moved {
+  from = aws_s3_bucket_server_side_encryption_configuration.documents
+  to   = module.s3.aws_s3_bucket_server_side_encryption_configuration.documents
+}
+
+moved {
+  from = aws_s3_bucket_public_access_block.documents
+  to   = module.s3.aws_s3_bucket_public_access_block.documents
+}
+
+moved {
+  from = aws_secretsmanager_secret.app_secrets
+  to   = module.secretsmanager.aws_secretsmanager_secret.app_secrets
+}
+
+moved {
+  from = aws_secretsmanager_secret_version.app_secrets
+  to   = module.secretsmanager.aws_secretsmanager_secret_version.app_secrets
+}
+
+moved {
+  from = module.cloudwatch.aws_cloudwatch_metric_alarm.backend_cpu
+  to   = module.cloudwatch.aws_cloudwatch_metric_alarm.backend_cpu_high
+}
+
+moved {
+  from = module.cloudwatch.aws_cloudwatch_metric_alarm.frontend_cpu
+  to   = module.cloudwatch.aws_cloudwatch_metric_alarm.frontend_cpu_high
+}

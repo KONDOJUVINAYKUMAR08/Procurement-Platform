@@ -7,15 +7,15 @@ output "internal_alb_dns" {
 }
 
 output "kms_key_arn" {
-  value = aws_kms_key.procurement_key.arn
+  value = module.kms.key_arn
 }
 
 output "s3_bucket_name" {
-  value = aws_s3_bucket.documents.bucket
+  value = module.s3.bucket_name
 }
 
 output "secret_name" {
-  value = aws_secretsmanager_secret.app_secrets.name
+  value = module.secretsmanager.secret_name
 }
 
 output "fqdn" {
@@ -45,4 +45,3 @@ output "backend_asg_name" {
 output "sns_topic_arn" {
   value = module.sns.topic_arn
 }
-
