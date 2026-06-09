@@ -131,7 +131,7 @@ resource "aws_cloudwatch_event_rule" "asg_events" {
   description = "Capture Auto Scaling instance launch and terminate events"
 
   event_pattern = jsonencode({
-    source      = ["aws.autoscaling"]
+    source = ["aws.autoscaling"]
     detail-type = [
       "EC2 Instance Launch Successful",
       "EC2 Instance Terminate Successful"

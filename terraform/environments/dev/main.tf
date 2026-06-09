@@ -92,16 +92,20 @@ module "internal_alb" {
 }
 
 module "frontend_asg" {
-  source               = "../../modules/asg"
-  name                 = "frontend-asg"
-  environment          = "dev"
-  vpc_zone_identifier  = module.vpc.frontend_subnets
-  target_group_arn     = module.public_alb.target_group_arn
-  security_group_id    = module.security_groups.frontend_sg_id
-  iam_instance_profile = module.iam.instance_profile_name
-  ami_id               = var.frontend_ami_id
-  instance_type        = "t3.small"
-  user_data            = base64encode(<<-EOF
+  source                 = "../../modules/asg"
+  name                   = "frontend-asg"
+  environment            = "dev"
+  vpc_zone_identifier    = module.vpc.frontend_subnets
+  target_group_arn       = module.public_alb.target_group_arn
+  security_group_id      = module.security_groups.frontend_sg_id
+  iam_instance_profile   = module.iam.instance_profile_name
+  ami_id                 = var.frontend_ami_id
+  instance_type          = "t3.small"
+  desired_capacity       = 2
+  min_size               = 2
+  max_size               = 4
+  target_cpu_utilization = 60
+  user_data = base64encode(<<-EOF
     #!/bin/bash
     cat << 'NGINX_CONF' > /etc/nginx/sites-available/procurement
     server {
@@ -147,21 +151,26 @@ module "frontend_asg" {
 }
 
 module "backend_asg" {
-  source               = "../../modules/asg"
-  name                 = "backend-asg"
-  environment          = "dev"
-  vpc_zone_identifier  = module.vpc.backend_subnets
-  target_group_arn     = module.internal_alb.target_group_arn
-  security_group_id    = module.security_groups.backend_sg_id
-  iam_instance_profile = module.iam.instance_profile_name
-  ami_id               = var.backend_ami_id
-  instance_type        = "t3.small"
+  source                 = "../../modules/asg"
+  name                   = "backend-asg"
+  environment            = "dev"
+  vpc_zone_identifier    = module.vpc.backend_subnets
+  target_group_arn       = module.internal_alb.target_group_arn
+  security_group_id      = module.security_groups.backend_sg_id
+  iam_instance_profile   = module.iam.instance_profile_name
+  ami_id                 = var.backend_ami_id
+  instance_type          = "t3.small"
+  desired_capacity       = 2
+  min_size               = 2
+  max_size               = 4
+  target_cpu_utilization = 60
 }
 
 module "sns" {
-  source        = "../../modules/sns"
-  environment   = "dev"
-  email_address = var.alert_email
+  source          = "../../modules/sns"
+  environment     = "dev"
+  sender_email    = var.sender_email
+  recipient_email = var.recipient_email
 }
 
 module "cloudwatch" {

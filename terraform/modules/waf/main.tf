@@ -24,6 +24,13 @@ resource "aws_wafv2_web_acl" "main" {
             count {}
           }
         }
+
+        rule_action_override {
+          name = "CrossSiteScripting_BODY"
+          action_to_use {
+            count {}
+          }
+        }
       }
     }
     visibility_config {
@@ -34,8 +41,75 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   rule {
-    name     = "SizeRestrictions_BODY_Custom"
+    name     = "BlockCoreRuleSetViolationsExceptUploads"
     priority = 2
+    action {
+      block {}
+    }
+    statement {
+      and_statement {
+        statement {
+          or_statement {
+            statement {
+              label_match_statement {
+                scope = "LABEL"
+                key   = "awswaf:managed:aws:core-rule-set:CrossSiteScripting_Body"
+              }
+            }
+            statement {
+              label_match_statement {
+                scope = "LABEL"
+                key   = "awswaf:managed:aws:core-rule-set:SizeRestrictions_Body"
+              }
+            }
+          }
+        }
+        statement {
+          not_statement {
+            statement {
+              and_statement {
+                statement {
+                  byte_match_statement {
+                    field_to_match {
+                      uri_path {}
+                    }
+                    positional_constraint = "EXACTLY"
+                    search_string         = "/api/documents/upload"
+                    text_transformation {
+                      priority = 0
+                      type     = "NONE"
+                    }
+                  }
+                }
+                statement {
+                  byte_match_statement {
+                    field_to_match {
+                      method {}
+                    }
+                    positional_constraint = "EXACTLY"
+                    search_string         = "POST"
+                    text_transformation {
+                      priority = 0
+                      type     = "NONE"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "BlockCRSExceptUploadsMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "SizeRestrictions_BODY_Custom"
+    priority = 3
     action {
       block {}
     }
@@ -82,7 +156,7 @@ resource "aws_wafv2_web_acl" "main" {
 
   rule {
     name     = "IPRateLimit"
-    priority = 3
+    priority = 4
     action {
       block {}
     }

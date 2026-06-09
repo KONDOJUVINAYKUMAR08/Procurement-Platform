@@ -1,6 +1,9 @@
 variable "environment" {
   type = string
 }
-variable "email_address" {
+variable "sender_email" {
+  type = string
+}
+variable "recipient_email" {
   type = string
 }

@@ -43,3 +43,8 @@ variable "user_data" {
   default = null
 }
 
+variable "target_cpu_utilization" {
+  type    = number
+  default = null
+}
+

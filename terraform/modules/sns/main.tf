@@ -5,14 +5,18 @@ resource "aws_sns_topic" "alerts" {
 resource "aws_sns_topic_subscription" "email" {
   topic_arn = aws_sns_topic.alerts.arn
   protocol  = "email"
-  endpoint  = var.email_address
+  endpoint  = var.recipient_email
 }
 
 # -----------------------------------------------------------------------------
 # Amazon SES Email Identity for Alerts
 # -----------------------------------------------------------------------------
-resource "aws_ses_email_identity" "alert_email" {
-  email = var.email_address
+resource "aws_ses_email_identity" "sender" {
+  email = var.sender_email
+}
+
+resource "aws_ses_email_identity" "recipient" {
+  email = var.recipient_email
 }
 
 # -----------------------------------------------------------------------------
@@ -25,22 +29,22 @@ resource "aws_sns_topic_policy" "default" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowEventBridgePublish"
-        Effect    = "Allow"
+        Sid    = "AllowEventBridgePublish"
+        Effect = "Allow"
         Principal = {
           Service = "events.amazonaws.com"
         }
-        Action    = "sns:Publish"
-        Resource  = aws_sns_topic.alerts.arn
+        Action   = "sns:Publish"
+        Resource = aws_sns_topic.alerts.arn
       },
       {
-        Sid       = "AllowCloudWatchPublish"
-        Effect    = "Allow"
+        Sid    = "AllowCloudWatchPublish"
+        Effect = "Allow"
         Principal = {
           Service = "cloudwatch.amazonaws.com"
         }
-        Action    = "sns:Publish"
-        Resource  = aws_sns_topic.alerts.arn
+        Action   = "sns:Publish"
+        Resource = aws_sns_topic.alerts.arn
       }
     ]
   })
@@ -62,8 +66,9 @@ module "lambda_function" {
   source_path = "${path.module}/lambda"
 
   environment_variables = {
-    SENDER_EMAIL    = var.email_address
-    RECIPIENT_EMAIL = var.email_address
+    SENDER_EMAIL    = var.sender_email
+    RECIPIENT_EMAIL = var.recipient_email
+    ENVIRONMENT     = var.environment
   }
 
   attach_policy_statements = true

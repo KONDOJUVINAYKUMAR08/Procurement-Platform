@@ -25,8 +25,14 @@ variable "subdomain" {
   default = "procurement"
 }
 
-variable "alert_email" {
-  type = string
+variable "sender_email" {
+  type    = string
+  default = "kondojuvinaykumar2004@gmail.com"
+}
+
+variable "recipient_email" {
+  type    = string
+  default = "vinaykumarkondoju08@gmail.com"
 }
 
 variable "users_table_name" {
