@@ -1,18 +1,19 @@
 variable "domain_name" {
-  type = string
+  type        = string
+  description = "Apex domain name"
 }
+
 variable "subdomain" {
-  type = string
+  type        = string
+  description = "Subdomain prefix"
 }
-variable "alb_dns_name" {
-  type = string
+
+variable "cloudfront_domain_name" {
+  type        = string
+  description = "Domain name of the CloudFront distribution"
 }
-variable "alb_zone_id" {
-  type = string
-}
-variable "internal_alb_dns_name" {
-  type = string
-}
-variable "internal_alb_zone_id" {
-  type = string
+
+variable "cloudfront_zone_id" {
+  type        = string
+  description = "Hosted zone ID of the CloudFront distribution"
 }

@@ -44,13 +44,11 @@ module "iam" {
 }
 
 module "route53" {
-  source                = "../../modules/route53"
-  domain_name           = var.domain_name
-  subdomain             = var.subdomain
-  alb_dns_name          = module.public_alb.alb_dns_name
-  alb_zone_id           = module.public_alb.zone_id
-  internal_alb_dns_name = module.internal_alb.alb_dns_name
-  internal_alb_zone_id  = module.internal_alb.zone_id
+  source                 = "../../modules/route53"
+  domain_name            = var.domain_name
+  subdomain              = var.subdomain
+  cloudfront_domain_name = module.cloudfront.cloudfront_domain_name
+  cloudfront_zone_id     = module.cloudfront.cloudfront_hosted_zone_id
 }
 
 module "acm" {
@@ -73,10 +71,8 @@ module "public_alb" {
   subnets           = module.vpc.public_subnets
   security_group_id = module.security_groups.public_alb_sg_id
   internal          = false
-  enable_https      = true
-  certificate_arn   = module.acm.certificate_arn
-  enable_waf        = true
-  waf_web_acl_arn   = module.waf.web_acl_arn
+  enable_https      = false # CloudFront serves HTTPS; communication to ALB is HTTP
+  enable_waf        = false # WAF is applied at CloudFront
 }
 
 module "internal_alb" {
@@ -101,7 +97,7 @@ module "frontend_asg" {
   iam_instance_profile = module.iam.instance_profile_name
   ami_id               = var.frontend_ami_id
   instance_type        = "t3.small"
-  user_data            = base64encode(<<-EOF
+  user_data = base64encode(<<-EOF
     #!/bin/bash
     cat << 'NGINX_CONF' > /etc/nginx/sites-available/procurement
     server {
@@ -154,6 +150,16 @@ module "backend_asg" {
   iam_instance_profile = module.iam.instance_profile_name
   ami_id               = var.backend_ami_id
   instance_type        = "t3.small"
+}
+
+module "cloudfront" {
+  source              = "../../modules/cloudfront"
+  environment         = "dev"
+  domain_name         = var.domain_name
+  subdomain           = var.subdomain
+  origin_dns_name     = module.public_alb.alb_dns_name
+  acm_certificate_arn = module.acm.certificate_arn
+  waf_web_acl_arn     = module.waf.web_acl_arn
 }
 
 module "sns" {

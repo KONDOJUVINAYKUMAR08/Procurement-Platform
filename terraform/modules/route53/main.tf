@@ -7,9 +7,9 @@ resource "aws_route53_record" "alb" {
   name    = "${var.subdomain}.${var.domain_name}"
   type    = "A"
   alias {
-    name                   = var.alb_dns_name
-    zone_id                = var.alb_zone_id
-    evaluate_target_health = true
+    name                   = var.cloudfront_domain_name
+    zone_id                = var.cloudfront_zone_id
+    evaluate_target_health = false
   }
 }
 
@@ -18,9 +18,9 @@ resource "aws_route53_record" "apex" {
   name    = var.domain_name
   type    = "A"
   alias {
-    name                   = var.alb_dns_name
-    zone_id                = var.alb_zone_id
-    evaluate_target_health = true
+    name                   = var.cloudfront_domain_name
+    zone_id                = var.cloudfront_zone_id
+    evaluate_target_health = false
   }
 }
 
@@ -29,11 +29,8 @@ resource "aws_route53_record" "www" {
   name    = "www.${var.domain_name}"
   type    = "A"
   alias {
-    name                   = var.alb_dns_name
-    zone_id                = var.alb_zone_id
-    evaluate_target_health = true
+    name                   = var.cloudfront_domain_name
+    zone_id                = var.cloudfront_zone_id
+    evaluate_target_health = false
   }
 }
-
-
-

@@ -1,9 +1,9 @@
 resource "aws_lb" "main" {
-  name               = "procurement-${var.environment}-${var.name}"
-  internal           = var.internal
-  load_balancer_type = "application"
-  security_groups    = [var.security_group_id]
-  subnets            = var.subnets
+  name                       = "procurement-${var.environment}-${var.name}"
+  internal                   = var.internal
+  load_balancer_type         = "application"
+  security_groups            = [var.security_group_id]
+  subnets                    = var.subnets
   enable_deletion_protection = false
   tags = {
     Environment = var.environment

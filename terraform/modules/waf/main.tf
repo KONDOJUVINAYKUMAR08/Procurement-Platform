@@ -1,12 +1,57 @@
 resource "aws_wafv2_web_acl" "main" {
   name        = "procurement-${var.environment}-waf-acl"
-  description = "WAF Web ACL for procurement platform"
-  scope       = "REGIONAL"
+  description = "WAF Web ACL for CloudFront procurement platform"
+  scope       = "CLOUDFRONT"
 
   default_action {
     allow {}
   }
 
+  # Priority 0: Allow File Upload endpoint immediately to bypass subsequent managed rule restrictions (like body size & XSS checks)
+  rule {
+    name     = "AllowFileUpload"
+    priority = 0
+    action {
+      allow {}
+    }
+    statement {
+      and_statement {
+        statement {
+          byte_match_statement {
+            field_to_match {
+              uri_path {}
+            }
+            positional_constraint = "EXACTLY"
+            search_string         = "/api/documents/upload"
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+        statement {
+          byte_match_statement {
+            field_to_match {
+              method {}
+            }
+            positional_constraint = "EXACTLY"
+            search_string         = "POST"
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AllowFileUploadMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Priority 1: Common Rule Set
   rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 1
@@ -17,13 +62,6 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
-
-        rule_action_override {
-          name = "SizeRestrictions_BODY"
-          action_to_use {
-            count {}
-          }
-        }
       }
     }
     visibility_config {
@@ -33,56 +71,50 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Priority 2: Known Bad Inputs
   rule {
-    name     = "SizeRestrictions_BODY_Custom"
+    name     = "AWSManagedRulesKnownBadInputsRuleSet"
     priority = 2
-    action {
-      block {}
+    override_action {
+      none {}
     }
     statement {
-      and_statement {
-        statement {
-          size_constraint_statement {
-            field_to_match {
-              body {}
-            }
-            comparison_operator = "GT"
-            size                = 8192
-            text_transformation {
-              priority = 0
-              type     = "NONE"
-            }
-          }
-        }
-        statement {
-          not_statement {
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  uri_path {}
-                }
-                positional_constraint = "EXACTLY"
-                search_string         = "/api/documents/upload"
-                text_transformation {
-                  priority = 0
-                  type     = "NONE"
-                }
-              }
-            }
-          }
-        }
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
       }
     }
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "SizeRestrictionsBodyCustomMetric"
+      metric_name                = "AWSManagedRulesKnownBadInputsMetric"
       sampled_requests_enabled   = true
     }
   }
 
+  # Priority 3: IP Reputation List
+  rule {
+    name     = "AWSManagedRulesAmazonIpReputationList"
+    priority = 3
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesAmazonIpReputationList"
+        vendor_name = "AWS"
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AWSManagedRulesAmazonIpReputationMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Priority 4: IP Rate Limit
   rule {
     name     = "IPRateLimit"
-    priority = 3
+    priority = 4
     action {
       block {}
     }
