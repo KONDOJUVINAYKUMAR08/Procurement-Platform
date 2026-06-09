@@ -108,6 +108,8 @@ module "frontend_asg" {
         listen 80;
         server_name _;
 
+        client_max_body_size 50M;
+
         root /var/www/html;
         index index.html;
 

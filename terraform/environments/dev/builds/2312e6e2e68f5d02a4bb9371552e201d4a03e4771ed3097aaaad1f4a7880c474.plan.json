@@ -1,0 +1,1 @@
+{"filename": "builds\\2312e6e2e68f5d02a4bb9371552e201d4a03e4771ed3097aaaad1f4a7880c474.zip", "runtime": "nodejs18.x", "artifacts_dir": "builds", "build_plan": [[["zip", "../../modules/sns/lambda", null]]]}
