@@ -25,3 +25,14 @@ variable "waf_web_acl_arn" {
   type    = string
   default = ""
 }
+
+variable "enable_https" {
+  type    = bool
+  default = false
+}
+
+variable "enable_waf" {
+  type    = bool
+  default = false
+}
+

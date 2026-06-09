@@ -1,22 +1,4 @@
-module "kms" {
-  source      = "../../modules/kms"
-  environment = "dev"
-}
-
-module "s3" {
-  source      = "../../modules/s3"
-  bucket_name = var.s3_bucket_name
-  environment = "dev"
-  kms_key_arn = module.kms.key_arn
-}
-
-module "dynamodb" {
-  source      = "../../modules/dynamodb"
-  environment = "dev"
-  kms_key_arn = module.kms.key_arn
-}
-
-module "networking" {
+module "vpc" {
   source                   = "../../modules/networking"
   environment              = "dev"
   aws_region               = var.aws_region
@@ -29,7 +11,7 @@ module "networking" {
 
 module "security_groups" {
   source      = "../../modules/security-groups"
-  vpc_id      = module.networking.vpc_id
+  vpc_id      = module.vpc.vpc_id
   environment = "dev"
 }
 
@@ -37,7 +19,7 @@ module "iam" {
   source         = "../../modules/iam"
   environment    = "dev"
   s3_bucket_name = var.s3_bucket_name
-  kms_key_arn    = module.kms.key_arn
+  kms_key_arn    = aws_kms_key.procurement_key.arn
 }
 
 module "route53" {
@@ -64,11 +46,13 @@ module "public_alb" {
   source            = "../../modules/alb"
   name              = "public-alb"
   environment       = "dev"
-  vpc_id            = module.networking.vpc_id
-  subnets           = module.networking.public_subnets
+  vpc_id            = module.vpc.vpc_id
+  subnets           = module.vpc.public_subnets
   security_group_id = module.security_groups.public_alb_sg_id
   internal          = false
+  enable_https      = true
   certificate_arn   = module.acm.certificate_arn
+  enable_waf        = true
   waf_web_acl_arn   = module.waf.web_acl_arn
 }
 
@@ -76,17 +60,19 @@ module "internal_alb" {
   source            = "../../modules/alb"
   name              = "internal-alb"
   environment       = "dev"
-  vpc_id            = module.networking.vpc_id
-  subnets           = module.networking.backend_subnets
+  vpc_id            = module.vpc.vpc_id
+  subnets           = module.vpc.backend_subnets
   security_group_id = module.security_groups.internal_alb_sg_id
   internal          = true
+  enable_https      = false
+  enable_waf        = false
 }
 
 module "frontend_asg" {
   source               = "../../modules/asg"
   name                 = "frontend-asg"
   environment          = "dev"
-  vpc_zone_identifier  = module.networking.frontend_subnets
+  vpc_zone_identifier  = module.vpc.frontend_subnets
   target_group_arn     = module.public_alb.target_group_arn
   security_group_id    = module.security_groups.frontend_sg_id
   iam_instance_profile = module.iam.instance_profile_name
@@ -98,7 +84,7 @@ module "backend_asg" {
   source               = "../../modules/asg"
   name                 = "backend-asg"
   environment          = "dev"
-  vpc_zone_identifier  = module.networking.backend_subnets
+  vpc_zone_identifier  = module.vpc.backend_subnets
   target_group_arn     = module.internal_alb.target_group_arn
   security_group_id    = module.security_groups.backend_sg_id
   iam_instance_profile = module.iam.instance_profile_name
@@ -106,14 +92,7 @@ module "backend_asg" {
   instance_type        = "t3.small"
 }
 
-module "secretsmanager" {
-  source         = "../../modules/secretsmanager"
-  environment    = "dev"
-  kms_key_id     = module.kms.key_arn
-  aws_region     = var.aws_region
-  s3_bucket_name = var.s3_bucket_name
-  public_alb_dns = module.public_alb.alb_dns_name
-}
+
 
 module "sns" {
   source        = "../../modules/sns"
@@ -133,12 +112,12 @@ module "cloudwatch" {
   internal_target_group_arn_suffix = module.internal_alb.target_group_arn_suffix
 }
 
-module "cloudtrail" {
-  source      = "../../modules/cloudtrail"
-  environment = "dev"
-}
+# module "cloudtrail" {
+#   source      = "../../modules/cloudtrail"
+#   environment = "dev"
+# }
 
-module "config" {
-  source      = "../../modules/config"
-  environment = "dev"
-}
+# module "config" {
+#   source      = "../../modules/config"
+#   environment = "dev"
+# }
