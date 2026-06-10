@@ -7,3 +7,6 @@ variable "subdomain" {
 variable "route53_zone_id" {
   type = string
 }
+variable "environment" {
+  type = string
+}

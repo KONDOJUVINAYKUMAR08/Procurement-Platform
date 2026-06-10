@@ -1,27 +1,33 @@
+locals {
+  environment = terraform.workspace
+  subdomain   = local.environment == "prod" ? "procurement-prod" : "procurement"
+}
+
 module "kms" {
   source      = "../../modules/kms"
-  environment = "dev"
+  environment = local.environment
 }
 
 module "s3" {
   source      = "../../modules/s3"
-  bucket_name = var.s3_bucket_name
-  environment = "dev"
+  bucket_name = "procurement-${local.environment}-documents-08"
+  environment = local.environment
   kms_key_arn = module.kms.key_arn
 }
 
 module "secretsmanager" {
   source         = "../../modules/secretsmanager"
-  environment    = "dev"
+  environment    = local.environment
   kms_key_id     = module.kms.key_arn
   aws_region     = var.aws_region
-  s3_bucket_name = var.s3_bucket_name
+  s3_bucket_name = "procurement-${local.environment}-documents-08"
   public_alb_dns = module.public_alb.alb_dns_name
+  cors_origin    = "https://${local.subdomain}.${var.domain_name}"
 }
 
 module "vpc" {
   source                   = "../../modules/networking"
-  environment              = "dev"
+  environment              = local.environment
   aws_region               = var.aws_region
   vpc_cidr                 = "10.0.0.0/16"
   azs                      = ["${var.aws_region}a", "${var.aws_region}b"]
@@ -33,42 +39,45 @@ module "vpc" {
 module "security_groups" {
   source      = "../../modules/security-groups"
   vpc_id      = module.vpc.vpc_id
-  environment = "dev"
+  environment = local.environment
 }
 
 module "iam" {
   source         = "../../modules/iam"
-  environment    = "dev"
-  s3_bucket_name = var.s3_bucket_name
+  environment    = local.environment
+  s3_bucket_name = "procurement-${local.environment}-documents-08"
   kms_key_arn    = module.kms.key_arn
 }
 
 module "route53" {
   source                = "../../modules/route53"
   domain_name           = var.domain_name
-  subdomain             = var.subdomain
+  subdomain             = local.subdomain
   alb_dns_name          = module.public_alb.alb_dns_name
   alb_zone_id           = module.public_alb.zone_id
   internal_alb_dns_name = module.internal_alb.alb_dns_name
   internal_alb_zone_id  = module.internal_alb.zone_id
+  environment           = local.environment
+  create_apex_records   = local.environment == "dev"
 }
 
 module "acm" {
   source          = "../../modules/acm"
   domain_name     = var.domain_name
-  subdomain       = var.subdomain
+  subdomain       = local.subdomain
   route53_zone_id = module.route53.zone_id
+  environment     = local.environment
 }
 
 module "waf" {
   source      = "../../modules/waf"
-  environment = "dev"
+  environment = local.environment
 }
 
 module "public_alb" {
   source            = "../../modules/alb"
   name              = "public-alb"
-  environment       = "dev"
+  environment       = local.environment
   vpc_id            = module.vpc.vpc_id
   subnets           = module.vpc.public_subnets
   security_group_id = module.security_groups.public_alb_sg_id
@@ -82,7 +91,7 @@ module "public_alb" {
 module "internal_alb" {
   source            = "../../modules/alb"
   name              = "internal-alb"
-  environment       = "dev"
+  environment       = local.environment
   vpc_id            = module.vpc.vpc_id
   subnets           = module.vpc.backend_subnets
   security_group_id = module.security_groups.internal_alb_sg_id
@@ -94,7 +103,7 @@ module "internal_alb" {
 module "frontend_asg" {
   source                 = "../../modules/asg"
   name                   = "frontend-asg"
-  environment            = "dev"
+  environment            = local.environment
   vpc_zone_identifier    = module.vpc.frontend_subnets
   target_group_arn       = module.public_alb.target_group_arn
   security_group_id      = module.security_groups.frontend_sg_id
@@ -153,7 +162,7 @@ module "frontend_asg" {
 module "backend_asg" {
   source                 = "../../modules/asg"
   name                   = "backend-asg"
-  environment            = "dev"
+  environment            = local.environment
   vpc_zone_identifier    = module.vpc.backend_subnets
   target_group_arn       = module.internal_alb.target_group_arn
   security_group_id      = module.security_groups.backend_sg_id
@@ -168,14 +177,14 @@ module "backend_asg" {
 
 module "sns" {
   source          = "../../modules/sns"
-  environment     = "dev"
+  environment     = local.environment
   sender_email    = var.sender_email
   recipient_email = var.recipient_email
 }
 
 module "cloudwatch" {
   source                           = "../../modules/cloudwatch"
-  environment                      = "dev"
+  environment                      = local.environment
   sns_topic_arn                    = module.sns.topic_arn
   frontend_asg_name                = module.frontend_asg.asg_name
   backend_asg_name                 = module.backend_asg.asg_name
@@ -234,4 +243,29 @@ moved {
 moved {
   from = module.cloudwatch.aws_cloudwatch_metric_alarm.frontend_cpu
   to   = module.cloudwatch.aws_cloudwatch_metric_alarm.frontend_cpu_high
+}
+
+moved {
+  from = module.route53.aws_route53_zone.primary
+  to   = module.route53.aws_route53_zone.primary[0]
+}
+
+moved {
+  from = module.acm.aws_acm_certificate.cert
+  to   = module.acm.aws_acm_certificate.cert[0]
+}
+
+moved {
+  from = module.acm.aws_acm_certificate_validation.cert
+  to   = module.acm.aws_acm_certificate_validation.cert[0]
+}
+
+moved {
+  from = module.route53.aws_route53_record.apex
+  to   = module.route53.aws_route53_record.apex[0]
+}
+
+moved {
+  from = module.route53.aws_route53_record.www
+  to   = module.route53.aws_route53_record.www[0]
 }

@@ -13,3 +13,7 @@ variable "s3_bucket_name" {
 variable "public_alb_dns" {
   type = string
 }
+variable "cors_origin" {
+  type = string
+}
+

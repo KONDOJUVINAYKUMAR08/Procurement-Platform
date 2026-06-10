@@ -1,9 +1,19 @@
+data "aws_route53_zone" "primary" {
+  count = var.environment != "dev" ? 1 : 0
+  name  = var.domain_name
+}
+
 resource "aws_route53_zone" "primary" {
-  name = var.domain_name
+  count = var.environment == "dev" ? 1 : 0
+  name  = var.domain_name
+}
+
+locals {
+  route53_zone_id = var.environment == "dev" ? aws_route53_zone.primary[0].zone_id : data.aws_route53_zone.primary[0].zone_id
 }
 
 resource "aws_route53_record" "alb" {
-  zone_id = aws_route53_zone.primary.zone_id
+  zone_id = local.route53_zone_id
   name    = "${var.subdomain}.${var.domain_name}"
   type    = "A"
   alias {
@@ -14,7 +24,8 @@ resource "aws_route53_record" "alb" {
 }
 
 resource "aws_route53_record" "apex" {
-  zone_id = aws_route53_zone.primary.zone_id
+  count   = var.create_apex_records ? 1 : 0
+  zone_id = local.route53_zone_id
   name    = var.domain_name
   type    = "A"
   alias {
@@ -25,7 +36,8 @@ resource "aws_route53_record" "apex" {
 }
 
 resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.primary.zone_id
+  count   = var.create_apex_records ? 1 : 0
+  zone_id = local.route53_zone_id
   name    = "www.${var.domain_name}"
   type    = "A"
   alias {

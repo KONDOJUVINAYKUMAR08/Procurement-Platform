@@ -19,6 +19,6 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
     AWS_KMS_KEY_ID     = var.kms_key_id
     NODE_ENV           = "production"
     PORT               = "5000"
-    CORS_ORIGIN        = "https://procurement.rxpulse.online"
+    CORS_ORIGIN        = var.cors_origin
   })
 }
