@@ -199,6 +199,15 @@ export const invoiceApi = {
   approve: (id: string) => api.post(`/invoices/${id}/approve`),
   markAsPaid: (id: string, paymentMethod: string) =>
     api.post(`/invoices/${id}/pay`, { paymentMethod }),
+  delete: (id: string) => api.delete(`/invoices/${id}`),
+  generatePdf: async (id: string): Promise<{ url: string; fileName: string }> => {
+    const res = await api.post(`/invoices/${id}/pdf`);
+    return item<{ url: string; fileName: string }>(res);
+  },
+  getStats: async (): Promise<any> => {
+    const res = await api.get('/invoices/stats');
+    return item<any>(res);
+  },
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────
@@ -265,6 +274,32 @@ export const documentApi = {
   delete: (id: string) => api.delete(`/documents/${id}`),
 };
 
+// ── Customers ─────────────────────────────────────────────────────────────────
+
+export const customerApi = {
+  getAll: async (params?: any): Promise<{ items: any[]; pagination: any }> => {
+    const res = await api.get('/customers', { params });
+    return list<any>(res);
+  },
+  getById: async (id: string): Promise<any> => {
+    const res = await api.get(`/customers/${id}`);
+    return item<any>(res);
+  },
+  create: async (data: any): Promise<any> => {
+    const res = await api.post('/customers', data);
+    return item<any>(res);
+  },
+  update: async (id: string, data: any): Promise<any> => {
+    const res = await api.put(`/customers/${id}`, data);
+    return item<any>(res);
+  },
+  delete: (id: string) => api.delete(`/customers/${id}`),
+  getStats: async (): Promise<any> => {
+    const res = await api.get('/customers/stats');
+    return item<any>(res);
+  },
+};
+
 // ── Reports ───────────────────────────────────────────────────────────────────
 
 export const reportApi = {
@@ -285,3 +320,48 @@ export const reportApi = {
     return item<{ data: any[]; summary: any[] }>(res);
   },
 };
+
+// ── HR API ────────────────────────────────────────────────────────────────────
+
+export const hrApi = {
+  // Employees
+  employees: {
+    getAll: async (params?: any) => { const res = await api.get('/hr/employees', { params }); return list<any>(res); },
+    getById: async (id: string) => { const res = await api.get(`/hr/employees/${id}`); return item<any>(res); },
+    create: async (data: any) => { const res = await api.post('/hr/employees', data); return item<any>(res); },
+    update: async (id: string, data: any) => { const res = await api.put(`/hr/employees/${id}`, data); return item<any>(res); },
+    delete: (id: string) => api.delete(`/hr/employees/${id}`),
+    getStats: async () => { const res = await api.get('/hr/employees/stats'); return item<any>(res); },
+  },
+
+  // Attendance
+  attendance: {
+    getAll: async (params?: any) => { const res = await api.get('/hr/attendance', { params }); return list<any>(res); },
+    getMy: async (params?: any) => { const res = await api.get('/hr/attendance/my', { params }); return (res.data?.data || res.data) as any[]; },
+    getSummary: async (params?: any) => { const res = await api.get('/hr/attendance/summary', { params }); return item<any>(res); },
+    checkIn: async (data: { photoBase64?: string; latitude?: number; longitude?: number; address?: string; notes?: string }) => {
+      const res = await api.post('/hr/attendance/checkin', data);
+      return item<any>(res);
+    },
+    checkOut: async () => { const res = await api.post('/hr/attendance/checkout', {}); return item<any>(res); },
+  },
+
+  // Payroll
+  payroll: {
+    getAll: async (params?: any) => { const res = await api.get('/hr/payroll', { params }); return list<any>(res); },
+    getById: async (id: string) => { const res = await api.get(`/hr/payroll/${id}`); return item<any>(res); },
+    generate: async (data: any) => { const res = await api.post('/hr/payroll/generate', data); return item<any>(res); },
+    markPaid: async (id: string) => { const res = await api.post(`/hr/payroll/${id}/mark-paid`, {}); return item<any>(res); },
+    generatePdf: async (id: string) => { const res = await api.post(`/hr/payroll/${id}/pdf`, {}); return item<any>(res); },
+  },
+
+  // Letters & Certificates
+  letters: {
+    getAll: async (params?: any) => { const res = await api.get('/hr/letters', { params }); return list<any>(res); },
+    getById: async (id: string) => { const res = await api.get(`/hr/letters/${id}`); return item<any>(res); },
+    create: async (data: any) => { const res = await api.post('/hr/letters', data); return item<any>(res); },
+    delete: (id: string) => api.delete(`/hr/letters/${id}`),
+    generatePdf: async (id: string) => { const res = await api.post(`/hr/letters/${id}/pdf`, {}); return item<any>(res); },
+  },
+};
+

@@ -13,6 +13,8 @@ import PurchaseRequests from './modules/procurement/PurchaseRequests';
 import PurchaseOrders from './modules/procurement/PurchaseOrders';
 import Contracts from './modules/procurement/Contracts';
 import Invoices from './modules/finance/Invoices';
+import InvoiceDashboard from './modules/finance/InvoiceDashboard';
+import Customers from './modules/finance/Customers';
 import Documents from './modules/document/Documents';
 import Notifications from './modules/document/Notifications';
 import AuditLogs from './modules/document/AuditLogs';
@@ -20,6 +22,10 @@ import Reports from './modules/dashboard/Reports';
 import UserManagement from './modules/identity/UserManagement';
 import Settings from './modules/identity/Settings';
 import LoadingScreen from './components/common/LoadingScreen';
+import EmployeeDashboard from './modules/hr/EmployeeDashboard';
+import AttendancePage from './modules/hr/AttendancePage';
+import PayrollPage from './modules/hr/PayrollPage';
+import LettersPage from './modules/hr/LettersPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +57,12 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+const RoleRoute: React.FC<{ children: React.ReactNode; roles: string[] }> = ({ children, roles }) => {
+  const { user } = useAuth();
+  if (!user || !roles.includes(user.role)) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
 function AppRoutes() {
   return (
     <Routes>
@@ -58,13 +70,53 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        {/* Main Dashboard */}
         <Route index element={<Dashboard />} />
+
+        {/* Procurement */}
         <Route path="vendors" element={<Vendors />} />
         <Route path="vendors/:id" element={<VendorDetail />} />
         <Route path="purchase-requests" element={<PurchaseRequests />} />
         <Route path="purchase-orders" element={<PurchaseOrders />} />
         <Route path="contracts" element={<Contracts />} />
+
+        {/* Finance */}
+        <Route path="invoice-dashboard" element={<InvoiceDashboard />} />
         <Route path="invoices" element={<Invoices />} />
+        <Route path="customers" element={
+          <RoleRoute roles={['admin', 'finance']}>
+            <Customers />
+          </RoleRoute>
+        } />
+
+        {/* HR & Payroll */}
+        <Route path="hr/employees" element={
+          <AdminRoute>
+            <EmployeeDashboard />
+          </AdminRoute>
+        } />
+        <Route path="hr/attendance" element={
+          <AdminRoute>
+            <AttendancePage />
+          </AdminRoute>
+        } />
+        <Route path="hr/payroll" element={
+          <RoleRoute roles={['admin', 'finance']}>
+            <PayrollPage />
+          </RoleRoute>
+        } />
+        <Route path="hr/letters" element={
+          <AdminRoute>
+            <LettersPage />
+          </AdminRoute>
+        } />
+        <Route path="hr/certificates" element={
+          <AdminRoute>
+            <LettersPage />
+          </AdminRoute>
+        } />
+
+        {/* Documents & System */}
         <Route path="documents" element={<Documents />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="audit-logs" element={<AdminRoute><AuditLogs /></AdminRoute>} />

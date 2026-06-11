@@ -1,39 +1,82 @@
 version: '3.8'
 
 services:
+  # ── DynamoDB Local ──────────────────────────────────────────────────────────
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: procurement-dynamodb-local
+    ports:
+      - '8000:8000'
+    command: '-jar DynamoDBLocal.jar -sharedDb -inMemory'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:8000/ 2>/dev/null || exit 0']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Backend (API Gateway — monolith) ────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/gateway/api-gateway/Dockerfile
+    container_name: procurement-backend
+    ports:
+      - '5000:5000'
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DYNAMODB_LOCAL_ENDPOINT: 'http://dynamodb-local:8000'
+      AWS_REGION: us-east-1
+      # Fake credentials required by AWS SDK even when using DynamoDB Local
+      AWS_ACCESS_KEY_ID: fakeMyKeyId
+      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
+      # S3 — set your real bucket/region when deploying to AWS
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-procurement-docs-local}
+      AWS_KMS_KEY_ID: ${AWS_KMS_KEY_ID:-}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_12345}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_change_in_production_12345}
+      JWT_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      CORS_ORIGIN: 'http://localhost'
+      SMTP_HOST: ${SMTP_HOST:-smtp.ethereal.email}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@procureflow.com}
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Frontend (Nginx + React build) ─────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: procurement-frontend
     ports:
-      - "80:80"
+      - '80:80'
     depends_on:
       - backend
+    restart: unless-stopped
 
-  backend:
+  # ── Seed (one-shot, run with --profile seed) ────────────────────────────────
+  seed:
     build:
       context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+      dockerfile: backend/gateway/api-gateway/Dockerfile
+    container_name: procurement-seed
     environment:
-      - NODE_ENV=development
-      - PORT=5000
-      - MONGODB_URI=mongodb://mongodb:27017/procurement-platform
-      - JWT_SECRET=development_jwt_secret_key_12345
-      - JWT_REFRESH_SECRET=development_jwt_refresh_secret_key_12345
-      - AWS_REGION=us-east-1
-      # Assuming local development uses localstack or similar if AWS services are strictly required, 
-      # but standard execution relies on MONGODB_URI here.
+      NODE_ENV: development
+      DYNAMODB_LOCAL_ENDPOINT: 'http://dynamodb-local:8000'
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: fakeMyKeyId
+      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
+      JWT_SECRET: dev_jwt_secret_change_in_production_12345
+      JWT_REFRESH_SECRET: dev_jwt_refresh_secret_change_in_production_12345
     depends_on:
-      - mongodb
-
-  mongodb:
-    image: mongo:6
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-
-volumes:
-  mongodb_data:
+      dynamodb-local:
+        condition: service_healthy
+    command: ['node', '-e', "require('./backend/scripts/seed.js')"]
+    profiles:
+      - seed

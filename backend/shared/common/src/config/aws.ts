@@ -39,14 +39,19 @@ export const uploadToS3 = async (
   key: string,
   mimeType: string
 ): Promise<string> => {
-  const params = {
+  const params: AWS.S3.PutObjectRequest = {
     Bucket: config.aws.s3Bucket,
     Key: key,
     Body: buffer,
     ContentType: mimeType,
-    ServerSideEncryption: 'aws:kms' as const,
-    SSEKMSKeyId: config.aws.kmsKeyId,
   };
+
+  // Only apply KMS encryption when a key is actually configured
+  if (config.aws.kmsKeyId) {
+    params.ServerSideEncryption = 'aws:kms';
+    params.SSEKMSKeyId = config.aws.kmsKeyId;
+  }
+
   const result = await s3.upload(params).promise();
   return result.Key;
 };

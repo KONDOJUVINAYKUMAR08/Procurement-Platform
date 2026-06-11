@@ -28,17 +28,23 @@ const config: AppConfig = {
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    // If not in production, you can configure Dynamoose to connect to a local instance
-    if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
+    const localEndpoint = process.env.DYNAMODB_LOCAL_ENDPOINT;
+
+    if (localEndpoint) {
+      // Use DynamoDB Local (Docker / local dev)
+      dynamoose.aws.ddb.local(localEndpoint);
+      console.log(`DynamoDB connected to local instance: ${localEndpoint}`);
+    } else if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
+      // Fallback: standard DynamoDB Local on localhost
       dynamoose.aws.ddb.local();
-      console.log('DynamoDB connected to local instance');
+      console.log('DynamoDB connected to local instance on localhost:8000');
     } else {
-      // In production, the AWS SDK automatically picks up the region and credentials
+      // Production: use IAM role / env credentials with AWS DynamoDB
       const ddb = new dynamoose.aws.ddb.DynamoDB({
         region: config.aws.region,
       });
       dynamoose.aws.ddb.set(ddb);
-      console.log(`DynamoDB connected to region: ${config.aws.region}`);
+      console.log(`DynamoDB connected to AWS region: ${config.aws.region}`);
     }
   } catch (error) {
     console.error('DynamoDB connection error:', error);
