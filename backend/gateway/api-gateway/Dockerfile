@@ -25,10 +25,14 @@ RUN npm install
 COPY backend/shared ./backend/shared
 COPY backend/services ./backend/services
 COPY backend/gateway/api-gateway ./backend/gateway/api-gateway
+COPY backend/scripts ./backend/scripts
 COPY tsconfig.base.json ./
 
 # Build all backend workspaces
 RUN npm run build:backend
+
+# Compile the seed script
+RUN npx tsc backend/scripts/seed.ts --resolveJsonModule --esModuleInterop --target es2020 --module commonjs --skipLibCheck true
 
 # Production stage
 FROM node:20-alpine
@@ -62,6 +66,9 @@ COPY --from=builder /app/backend/services/document-service/package.json ./backen
 
 COPY --from=builder /app/backend/gateway/api-gateway/dist ./backend/gateway/api-gateway/dist
 COPY --from=builder /app/backend/gateway/api-gateway/package.json ./backend/gateway/api-gateway/
+
+# Copy compiled seed script
+COPY --from=builder /app/backend/scripts/seed.js ./backend/scripts/seed.js
 
 RUN npm ci --omit=dev
 
