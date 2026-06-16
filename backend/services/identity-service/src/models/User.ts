@@ -12,6 +12,7 @@ export interface UserDocument extends Item {
   role: UserRole;
   department: string;
   isActive: boolean;
+  mustChangePassword?: boolean;
   lastLogin?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -40,11 +41,12 @@ const userSchema = new dynamoose.Schema(
     lastName: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor'],
+      enum: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'],
       default: 'procurement_manager',
     },
     department: { type: String, default: 'General' },
     isActive: { type: Boolean, default: true },
+    mustChangePassword: { type: Boolean, default: false },
     lastLogin: { type: Date },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },

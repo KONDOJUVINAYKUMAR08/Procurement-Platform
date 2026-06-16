@@ -29,8 +29,25 @@ const config: AppConfig = {
 export const connectDatabase = async (): Promise<void> => {
   try {
     const localEndpoint = process.env.DYNAMODB_LOCAL_ENDPOINT;
+    const useAws = process.env.USE_AWS_DYNAMODB === 'true' || (config.nodeEnv === 'production' && !localEndpoint);
 
-    if (localEndpoint) {
+    if (useAws) {
+      if (process.env.AWS_ACCESS_KEY_ID === 'fakeMyKeyId' || !process.env.AWS_ACCESS_KEY_ID) {
+        delete process.env.AWS_ACCESS_KEY_ID;
+      }
+      if (process.env.AWS_SECRET_ACCESS_KEY === 'fakeSecretAccessKey' || !process.env.AWS_SECRET_ACCESS_KEY) {
+        delete process.env.AWS_SECRET_ACCESS_KEY;
+      }
+    }
+
+    if (useAws) {
+      // Production or forced AWS: use IAM role / env credentials with AWS DynamoDB
+      const ddb = new dynamoose.aws.ddb.DynamoDB({
+        region: config.aws.region,
+      });
+      dynamoose.aws.ddb.set(ddb);
+      console.log(`DynamoDB connected to AWS region: ${config.aws.region}`);
+    } else if (localEndpoint) {
       // Use DynamoDB Local (Docker / local dev)
       dynamoose.aws.ddb.local(localEndpoint);
       console.log(`DynamoDB connected to local instance: ${localEndpoint}`);
@@ -39,12 +56,12 @@ export const connectDatabase = async (): Promise<void> => {
       dynamoose.aws.ddb.local();
       console.log('DynamoDB connected to local instance on localhost:8000');
     } else {
-      // Production: use IAM role / env credentials with AWS DynamoDB
+      // Fallback if production is specified without AWS configuration override
       const ddb = new dynamoose.aws.ddb.DynamoDB({
         region: config.aws.region,
       });
       dynamoose.aws.ddb.set(ddb);
-      console.log(`DynamoDB connected to AWS region: ${config.aws.region}`);
+      console.log(`DynamoDB connected to AWS region (default fallback): ${config.aws.region}`);
     }
   } catch (error) {
     console.error('DynamoDB connection error:', error);

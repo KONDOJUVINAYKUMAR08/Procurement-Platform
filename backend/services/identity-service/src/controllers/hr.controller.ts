@@ -65,14 +65,19 @@ export const attendanceController = {
   async getAll(req: IAuthenticatedRequest, res: Response) {
     try {
       const { page, limit, skip } = paginate(+req.query.page! || 1, +req.query.limit! || 50);
-      const result = await attendanceService.getAll(req.query, skip, limit);
+      const query = { ...req.query };
+      if (req.user!.role === 'employee') {
+        query.employeeId = req.user!.userId;
+      }
+      const result = await attendanceService.getAll(query, skip, limit);
       return sendSuccess(res, { data: result.records, pagination: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) } });
     } catch (e: any) { return sendError(res, e.message); }
   },
   async getSummary(req: IAuthenticatedRequest, res: Response) {
     try {
       const { month, year, employeeId } = req.query as any;
-      const summary = await attendanceService.getSummary(employeeId || req.user!.userId, +month, +year);
+      const targetEmpId = req.user!.role === 'employee' ? req.user!.userId : (employeeId || req.user!.userId);
+      const summary = await attendanceService.getSummary(targetEmpId, +month, +year);
       return sendSuccess(res, summary);
     } catch (e: any) { return sendError(res, e.message); }
   },
@@ -91,12 +96,22 @@ export const payrollController = {
   async findAll(req: IAuthenticatedRequest, res: Response) {
     try {
       const { page, limit, skip } = paginate(+req.query.page! || 1, +req.query.limit! || 20);
-      const result = await payrollService.findAll(req.query, skip, limit);
+      const query = { ...req.query };
+      if (req.user!.role === 'employee') {
+        query.employeeId = req.user!.userId;
+      }
+      const result = await payrollService.findAll(query, skip, limit);
       return sendSuccess(res, { data: result.payslips, pagination: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) } });
     } catch (e: any) { return sendError(res, e.message); }
   },
   async findById(req: IAuthenticatedRequest, res: Response) {
-    try { return sendSuccess(res, await payrollService.findById(req.params.id)); }
+    try {
+      const payslip = await payrollService.findById(req.params.id);
+      if (req.user!.role === 'employee' && payslip.employeeId !== req.user!.userId) {
+        return sendError(res, 'Access denied', 403);
+      }
+      return sendSuccess(res, payslip);
+    }
     catch (e: any) { return sendError(res, e.message, 404); }
   },
   async markPaid(req: IAuthenticatedRequest, res: Response) {
@@ -105,6 +120,10 @@ export const payrollController = {
   },
   async generatePdf(req: IAuthenticatedRequest, res: Response) {
     try {
+      const payslip = await payrollService.findById(req.params.id);
+      if (req.user!.role === 'employee' && payslip.employeeId !== req.user!.userId) {
+        return sendError(res, 'Access denied', 403);
+      }
       const result = await payrollService.generatePdf(req.params.id);
       return sendSuccess(res, result, 'PDF generated');
     } catch (e: any) { return sendError(res, e.message, 400); }
@@ -121,12 +140,22 @@ export const letterController = {
   async findAll(req: IAuthenticatedRequest, res: Response) {
     try {
       const { page, limit, skip } = paginate(+req.query.page! || 1, +req.query.limit! || 20);
-      const result = await letterService.findAll(req.query, skip, limit);
+      const query = { ...req.query };
+      if (req.user!.role === 'employee') {
+        query.employeeId = req.user!.userId;
+      }
+      const result = await letterService.findAll(query, skip, limit);
       return sendSuccess(res, { data: result.letters, pagination: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) } });
     } catch (e: any) { return sendError(res, e.message); }
   },
   async findById(req: IAuthenticatedRequest, res: Response) {
-    try { return sendSuccess(res, await letterService.findById(req.params.id)); }
+    try {
+      const letter = await letterService.findById(req.params.id);
+      if (req.user!.role === 'employee' && letter.employeeId !== req.user!.userId) {
+        return sendError(res, 'Access denied', 403);
+      }
+      return sendSuccess(res, letter);
+    }
     catch (e: any) { return sendError(res, e.message, 404); }
   },
   async delete(req: IAuthenticatedRequest, res: Response) {

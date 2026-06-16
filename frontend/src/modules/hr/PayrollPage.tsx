@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrApi } from '../../services/endpoints';
+import { useAuth } from '../../context/AuthContext';
 import { formatDate } from '../../lib/utils';
 import {
   DollarSign, Plus, Search, X, Download, CheckCircle,
@@ -78,6 +79,9 @@ const GenerateForm: React.FC<{ employees: any[]; onClose: () => void; onSaved: (
 
 const PayrollPage: React.FC = () => {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const role = user?.role || '';
+
   const [page, setPage] = useState(1);
   const [empFilter, setEmpFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
@@ -85,13 +89,20 @@ const PayrollPage: React.FC = () => {
   const [showGenerate, setShowGenerate] = useState(false);
 
   const { data } = useQuery({
-    queryKey: ['payroll', page, empFilter, monthFilter, yearFilter],
-    queryFn: () => hrApi.payroll.getAll({ page, limit: 10, employeeId: empFilter, month: monthFilter, year: yearFilter }),
+    queryKey: ['payroll', page, empFilter, monthFilter, yearFilter, role],
+    queryFn: () => hrApi.payroll.getAll({ 
+      page, 
+      limit: 10, 
+      employeeId: role === 'employee' ? user?._id : empFilter, 
+      month: monthFilter, 
+      year: yearFilter 
+    }),
   });
 
   const { data: empData } = useQuery({
     queryKey: ['employees-all'],
     queryFn: () => hrApi.employees.getAll({ limit: 100, status: 'active' }),
+    enabled: role !== 'employee',
   });
 
   const pdfMutation = useMutation({
@@ -122,17 +133,25 @@ const PayrollPage: React.FC = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Payroll</h1>
-          <p className="page-description">Generate, manage, and download employee payslips</p>
+          <p className="page-description">
+            {role === 'employee' ? 'View and download your monthly payslips' : 'Generate, manage, and download employee payslips'}
+          </p>
         </div>
-        <button onClick={() => setShowGenerate(true)} className="btn-primary flex items-center gap-2"><Plus size={16} /> Generate Payslip</button>
+        {role !== 'employee' && (
+          <button onClick={() => setShowGenerate(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={16} /> Generate Payslip
+          </button>
+        )}
       </div>
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <select value={empFilter} onChange={e => { setEmpFilter(e.target.value); setPage(1); }} className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white outline-none">
-          <option value="" className="bg-[#0d0d14]">All Employees</option>
-          {employees.map((e: any) => <option key={e._id} value={e._id} className="bg-[#0d0d14]">{e.firstName} {e.lastName}</option>)}
-        </select>
+        {role !== 'employee' && (
+          <select value={empFilter} onChange={e => { setEmpFilter(e.target.value); setPage(1); }} className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white outline-none">
+            <option value="" className="bg-[#0d0d14]">All Employees</option>
+            {employees.map((e: any) => <option key={e._id} value={e._id} className="bg-[#0d0d14]">{e.firstName} {e.lastName}</option>)}
+          </select>
+        )}
         <select value={monthFilter} onChange={e => { setMonthFilter(e.target.value); setPage(1); }} className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white outline-none">
           <option value="" className="bg-[#0d0d14]">All Months</option>
           {MONTHS.map((m, i) => <option key={m} value={i + 1} className="bg-[#0d0d14]">{m}</option>)}
@@ -185,7 +204,7 @@ const PayrollPage: React.FC = () => {
                       <button onClick={() => pdfMutation.mutate(p._id)} disabled={pdfMutation.isPending} className="p-1.5 rounded hover:bg-white/5 text-neutral-400 hover:text-white" title="Download PDF">
                         <Download size={14} />
                       </button>
-                      {p.status === 'generated' && (
+                      {p.status === 'generated' && role !== 'employee' && (
                         <button onClick={() => paidMutation.mutate(p._id)} className="p-1.5 rounded hover:bg-emerald-500/10 text-emerald-400" title="Mark Paid">
                           <CheckCircle size={14} />
                         </button>

@@ -15,6 +15,7 @@ import Contracts from './modules/procurement/Contracts';
 import Invoices from './modules/finance/Invoices';
 import InvoiceDashboard from './modules/finance/InvoiceDashboard';
 import Customers from './modules/finance/Customers';
+import Payments from './modules/finance/Payments';
 import Documents from './modules/document/Documents';
 import Notifications from './modules/document/Notifications';
 import AuditLogs from './modules/document/AuditLogs';
@@ -88,6 +89,11 @@ function AppRoutes() {
             <Customers />
           </RoleRoute>
         } />
+        <Route path="payments" element={
+          <RoleRoute roles={['admin', 'finance']}>
+            <Payments />
+          </RoleRoute>
+        } />
 
         {/* HR & Payroll */}
         <Route path="hr/employees" element={
@@ -96,24 +102,24 @@ function AppRoutes() {
           </AdminRoute>
         } />
         <Route path="hr/attendance" element={
-          <AdminRoute>
+          <RoleRoute roles={['admin', 'employee']}>
             <AttendancePage />
-          </AdminRoute>
+          </RoleRoute>
         } />
         <Route path="hr/payroll" element={
-          <RoleRoute roles={['admin', 'finance']}>
+          <RoleRoute roles={['admin', 'finance', 'employee']}>
             <PayrollPage />
           </RoleRoute>
         } />
         <Route path="hr/letters" element={
-          <AdminRoute>
+          <RoleRoute roles={['admin', 'employee']}>
             <LettersPage />
-          </AdminRoute>
+          </RoleRoute>
         } />
         <Route path="hr/certificates" element={
-          <AdminRoute>
+          <RoleRoute roles={['admin', 'employee']}>
             <LettersPage />
-          </AdminRoute>
+          </RoleRoute>
         } />
 
         {/* Documents & System */}

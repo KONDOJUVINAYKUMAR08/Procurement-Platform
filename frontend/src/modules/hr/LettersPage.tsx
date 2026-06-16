@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrApi } from '../../services/endpoints';
+import { useAuth } from '../../context/AuthContext';
 import { formatDate } from '../../lib/utils';
 import {
   FileText, Plus, Download, Trash2, AlertCircle, X,
@@ -142,18 +143,27 @@ const LetterForm: React.FC<{ employees: any[]; onClose: () => void; onSaved: () 
 
 const LettersPage: React.FC = () => {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const role = user?.role || '';
+
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
 
   const { data } = useQuery({
-    queryKey: ['letters', page, typeFilter],
-    queryFn: () => hrApi.letters.getAll({ page, limit: 10, letterType: typeFilter }),
+    queryKey: ['letters', page, typeFilter, role],
+    queryFn: () => hrApi.letters.getAll({ 
+      page, 
+      limit: 10, 
+      letterType: typeFilter, 
+      employeeId: role === 'employee' ? user?._id : undefined 
+    }),
   });
 
   const { data: empData } = useQuery({
     queryKey: ['employees-all'],
     queryFn: () => hrApi.employees.getAll({ limit: 100, status: 'active' }),
+    enabled: role !== 'employee',
   });
 
   const pdfMutation = useMutation({
@@ -190,9 +200,13 @@ const LettersPage: React.FC = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Letters & Certificates</h1>
-          <p className="page-description">Generate offer letters, experience letters, and internship certificates</p>
+          <p className="page-description">
+            {role === 'employee' ? 'View and download your official company letters and certificates' : 'Generate offer letters, experience letters, and internship certificates'}
+          </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2"><Plus size={16} /> Generate Letter</button>
+        {role !== 'employee' && (
+          <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2"><Plus size={16} /> Generate Letter</button>
+        )}
       </div>
 
       {/* Type filter */}
@@ -210,7 +224,9 @@ const LettersPage: React.FC = () => {
         <div className="glass-card p-16 text-center">
           <FileText size={48} className="mx-auto mb-4 text-neutral-700" />
           <p className="text-neutral-400 font-medium">No letters generated yet</p>
-          <button onClick={() => setShowForm(true)} className="btn-primary mt-4 text-sm"><Plus size={14} className="inline mr-1" /> Generate First Letter</button>
+          {role !== 'employee' && (
+            <button onClick={() => setShowForm(true)} className="btn-primary mt-4 text-sm"><Plus size={14} className="inline mr-1" /> Generate First Letter</button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,10 +262,12 @@ const LettersPage: React.FC = () => {
                   className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-medium transition-colors">
                   <Download size={13} /> Download PDF
                 </button>
-                <button onClick={() => { if (confirm('Delete this letter?')) deleteMutation.mutate(l._id); }}
-                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-neutral-500 hover:text-red-400 transition-colors">
-                  <Trash2 size={14} />
-                </button>
+                {role !== 'employee' && (
+                  <button onClick={() => { if (confirm('Delete this letter?')) deleteMutation.mutate(l._id); }}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-neutral-500 hover:text-red-400 transition-colors">
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

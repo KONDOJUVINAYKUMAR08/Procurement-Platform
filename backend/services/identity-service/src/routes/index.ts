@@ -17,6 +17,7 @@ router.post('/auth/reset-password', validate(resetPasswordSchema), authControlle
 router.post('/auth/logout', authController.logout);
 router.get('/auth/profile', authenticate, authController.getProfile);
 router.put('/auth/profile', authenticate, authController.updateProfile);
+router.post('/auth/change-password', authenticate, authController.changePassword);
 
 // ── User management (admin only) ──────────────────────────────────────────────
 router.get('/users', authenticate, authorize(ROLES.ADMIN), userController.findAll);

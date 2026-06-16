@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 /* ─── User & Auth ──────────────────────────────────────────────── */
 
-export type UserRole = 'admin' | 'procurement_manager' | 'finance' | 'vendor' | 'auditor';
+export type UserRole = 'admin' | 'procurement_manager' | 'finance' | 'vendor' | 'auditor' | 'employee';
 
 export interface IUser {
   _id: string;
@@ -277,9 +277,10 @@ export const ROLES = {
   FINANCE: 'finance' as const,
   VENDOR: 'vendor' as const,
   AUDITOR: 'auditor' as const,
+  EMPLOYEE: 'employee' as const,
 };
 
-export const ALL_ROLES: UserRole[] = ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor'];
+export const ALL_ROLES: UserRole[] = ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'];
 
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   admin: ['*'],
@@ -321,5 +322,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'audit:read',
     'notifications:read',
     'dashboard:read', 'reports:read',
+  ],
+  employee: [
+    'attendance:read:own', 'attendance:write:own',
+    'payroll:read:own',
+    'letters:read:own',
+    'documents:read:own',
   ],
 };

@@ -210,6 +210,27 @@ export const invoiceApi = {
   },
 };
 
+// ── Payments ──────────────────────────────────────────────────────────────────
+
+export const paymentApi = {
+  getAll: async (params?: any): Promise<{ items: any[]; pagination: any }> => {
+    const res = await api.get('/payments', { params });
+    return list<any>(res);
+  },
+  getById: async (id: string): Promise<any> => {
+    const res = await api.get(`/payments/${id}`);
+    return item<any>(res);
+  },
+  create: async (data: any): Promise<any> => {
+    const res = await api.post('/payments', data);
+    return item<any>(res);
+  },
+  getStats: async (): Promise<any> => {
+    const res = await api.get('/payments/stats');
+    return item<any>(res);
+  },
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notificationApi = {

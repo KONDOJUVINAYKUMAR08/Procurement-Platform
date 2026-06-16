@@ -122,20 +122,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   // ── HR Group ─────────────────────────────────────────────────────
   const hrItems: NavItem[] = [
     { label: 'Employees', path: '/hr/employees', icon: <Briefcase size={18} />, roles: ['admin'] },
-    { label: 'Attendance', path: '/hr/attendance', icon: <Clock size={18} />, roles: ['admin'] },
-    { label: 'Payroll', path: '/hr/payroll', icon: <DollarSign size={18} />, roles: ['admin', 'finance'] },
-    { label: 'Letters', path: '/hr/letters', icon: <FileSignature size={18} />, roles: ['admin'] },
-    { label: 'Certificates', path: '/hr/certificates', icon: <Award size={18} />, roles: ['admin'] },
+    { label: 'Attendance', path: '/hr/attendance', icon: <Clock size={18} />, roles: ['admin', 'employee'] },
+    { label: 'Payroll', path: '/hr/payroll', icon: <DollarSign size={18} />, roles: ['admin', 'finance', 'employee'] },
+    { label: 'Letters', path: '/hr/letters', icon: <FileSignature size={18} />, roles: ['admin', 'employee'] },
+    { label: 'Certificates', path: '/hr/certificates', icon: <Award size={18} />, roles: ['admin', 'employee'] },
   ];
 
   // ── System Group ─────────────────────────────────────────────────
   const systemItems: NavItem[] = [
-    { label: 'Documents', path: '/documents', icon: <FolderOpen size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor'] },
-    { label: 'Notifications', path: '/notifications', icon: <Bell size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor'] },
+    { label: 'Documents', path: '/documents', icon: <FolderOpen size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
+    { label: 'Notifications', path: '/notifications', icon: <Bell size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
     { label: 'Reports', path: '/reports', icon: <BarChart3 size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'auditor'] },
     { label: 'Audit Logs', path: '/audit-logs', icon: <Shield size={18} />, roles: ['admin', 'auditor'] },
     { label: 'Users', path: '/users', icon: <Users size={18} />, roles: ['admin'] },
-    { label: 'Settings', path: '/settings', icon: <Settings size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor'] },
+    { label: 'Settings', path: '/settings', icon: <Settings size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
   ];
 
   const filter = (items: NavItem[]) => items.filter(item => !item.roles || item.roles.includes(role));

@@ -170,6 +170,19 @@ export class AuthService {
     delete sanitizedUser.resetPasswordExpires;
     return sanitizedUser;
   }
+
+  async changePassword(userId: string, current: string, replacement: string) {
+    const user = await User.get(userId);
+    if (!user) throw new Error('User not found');
+
+    const isMatch = await bcrypt.compare(current, user.password);
+    if (!isMatch) throw new Error('Incorrect current password');
+
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(replacement, salt);
+    user.mustChangePassword = false;
+    await user.save();
+  }
 }
 
 export default new AuthService();
