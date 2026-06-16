@@ -5,47 +5,53 @@ process.env.AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 import { connectDatabase } from '@procurement/common';
-import { User } from '@procurement/identity-service';
-import { Vendor, PurchaseRequest, PurchaseOrder, Contract } from '@procurement/procurement-service';
-import { Invoice, Payment } from '@procurement/finance-service';
-import { Notification, AuditLog, Document as Doc } from '@procurement/document-service';
 
 // Helper to get random item from array
 const randomItem = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 // Helper to get random number between min and max
 const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-const clearTable = async (model: any) => {
+const clearTable = async (name: string, model: any) => {
+  console.log(`[SEED DIAGNOSTIC] Initiating clearTable for: ${name}`);
   try {
+    console.log(`[SEED DIAGNOSTIC] Scanning ${name}...`);
     const items = await model.scan().exec();
+    console.log(`[SEED DIAGNOSTIC] Found ${items.length} items in ${name}. Deleting...`);
     const deleteOps = items.map((item: any) => model.delete({ _id: item._id }));
     await Promise.all(deleteOps);
-    console.log(`  Cleared ${items.length} items from ${model.name}`);
-  } catch (err) {
-    // Table may not exist yet — safe to ignore
-    console.log(`  Skipping clear for ${model.name} (table may not exist yet)`);
+    console.log(`[SEED DIAGNOSTIC] Completed clearing for ${name}`);
+  } catch (err: any) {
+    console.error(`[SEED DIAGNOSTIC ERROR] Failed to clear table for ${name}:`, err);
+    throw err; // Rethrow to stop execution and show the exact stack trace
   }
 };
 
 const seedData = async () => {
   try {
+    console.log('Connected to database check starts...');
     await connectDatabase();
     console.log('Connected to DynamoDB');
 
-    // Clear existing data
-    console.log('Clearing existing data...');
-    await Promise.all([
-      clearTable(User),
-      clearTable(Vendor),
-      clearTable(PurchaseRequest),
-      clearTable(PurchaseOrder),
-      clearTable(Contract),
-      clearTable(Invoice),
-      clearTable(Payment),
-      clearTable(Notification),
-      clearTable(AuditLog),
-      clearTable(Doc),
-    ]);
+    // Defer model importing until database connection is established to avoid race condition
+    console.log('DIAGNOSTIC: Dynamically importing models AFTER connection...');
+    const { User } = await import('@procurement/identity-service');
+    const { Vendor, PurchaseRequest, PurchaseOrder, Contract } = await import('@procurement/procurement-service');
+    const { Invoice, Payment } = await import('@procurement/finance-service');
+    const { Notification, AuditLog, Document: Doc } = await import('@procurement/document-service');
+    console.log('DIAGNOSTIC: Models imported successfully.');
+
+    // Clear existing data sequentially to pinpoint the failing model
+    console.log('Clearing existing data sequentially...');
+    await clearTable('User', User);
+    await clearTable('Vendor', Vendor);
+    await clearTable('PurchaseRequest', PurchaseRequest);
+    await clearTable('PurchaseOrder', PurchaseOrder);
+    await clearTable('Contract', Contract);
+    await clearTable('Invoice', Invoice);
+    await clearTable('Payment', Payment);
+    await clearTable('Notification', Notification);
+    await clearTable('AuditLog', AuditLog);
+    await clearTable('Doc', Doc);
     console.log('Cleared existing data.');
 
     // 1. Create 5 Users (including vendor and auditor roles)

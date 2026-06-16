@@ -7,10 +7,6 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 
 import { logger, connectDatabase, getSecrets, updateConfig, config } from '@procurement/common';
-import identityRoutes from '@procurement/identity-service';
-import procurementRoutes from '@procurement/procurement-service';
-import financeRoutes from '@procurement/finance-service';
-import documentRoutes from '@procurement/document-service';
 
 import dashboardController from './controllers/dashboard.controller';
 import reportController from './controllers/report.controller';
@@ -64,10 +60,10 @@ export const bootstrapApp = async (): Promise<import('express').Express> => {
     apiRouter.get('/reports/contracts', authenticate, authorize(ROLES.ADMIN, ROLES.PROCUREMENT_MANAGER, ROLES.FINANCE, ROLES.AUDITOR), reportController.contractReport);
 
     // Service Routes
-    apiRouter.use(identityRoutes);
-    apiRouter.use(procurementRoutes);
-    apiRouter.use(financeRoutes);
-    apiRouter.use(documentRoutes);
+    apiRouter.use((await import('@procurement/identity-service')).default);
+    apiRouter.use((await import('@procurement/procurement-service')).default);
+    apiRouter.use((await import('@procurement/finance-service')).default);
+    apiRouter.use((await import('@procurement/document-service')).default);
 
     // Health check
     app.get('/api/health', (req, res) => {

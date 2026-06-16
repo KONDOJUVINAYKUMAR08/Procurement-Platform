@@ -31,11 +31,23 @@ export const connectDatabase = async (): Promise<void> => {
     const localEndpoint = process.env.DYNAMODB_LOCAL_ENDPOINT;
     const useAws = process.env.USE_AWS_DYNAMODB === 'true' || (config.nodeEnv === 'production' && !localEndpoint);
 
+    console.log('=== DYNAMODB STARTUP DIAGNOSTICS ===');
+    console.log(`  NODE_ENV: ${config.nodeEnv}`);
+    console.log(`  USE_AWS_DYNAMODB: ${process.env.USE_AWS_DYNAMODB}`);
+    console.log(`  DYNAMODB_LOCAL_ENDPOINT: ${localEndpoint}`);
+    console.log(`  Resolved useAws flag: ${useAws}`);
+    console.log(`  Configured AWS Region: ${config.aws.region}`);
+    console.log(`  Configured AWS S3 Bucket: ${config.aws.s3Bucket}`);
+    console.log(`  AWS_ACCESS_KEY_ID present: ${!!process.env.AWS_ACCESS_KEY_ID} (${process.env.AWS_ACCESS_KEY_ID || 'empty'})`);
+    console.log(`  AWS_SECRET_ACCESS_KEY present: ${!!process.env.AWS_SECRET_ACCESS_KEY}`);
+
     if (useAws) {
       if (process.env.AWS_ACCESS_KEY_ID === 'fakeMyKeyId' || !process.env.AWS_ACCESS_KEY_ID) {
+        console.log('  [DIAGNOSTICS] Deleting fake/empty AWS_ACCESS_KEY_ID to trigger IAM Role fallback');
         delete process.env.AWS_ACCESS_KEY_ID;
       }
       if (process.env.AWS_SECRET_ACCESS_KEY === 'fakeSecretAccessKey' || !process.env.AWS_SECRET_ACCESS_KEY) {
+        console.log('  [DIAGNOSTICS] Deleting fake/empty AWS_SECRET_ACCESS_KEY to trigger IAM Role fallback');
         delete process.env.AWS_SECRET_ACCESS_KEY;
       }
     }
@@ -46,25 +58,26 @@ export const connectDatabase = async (): Promise<void> => {
         region: config.aws.region,
       });
       dynamoose.aws.ddb.set(ddb);
-      console.log(`DynamoDB connected to AWS region: ${config.aws.region}`);
+      console.log(`=== DYNAMODB CONFIG: Using AWS DynamoDB (Region: ${config.aws.region}) ===`);
     } else if (localEndpoint) {
       // Use DynamoDB Local (Docker / local dev)
       dynamoose.aws.ddb.local(localEndpoint);
-      console.log(`DynamoDB connected to local instance: ${localEndpoint}`);
+      console.log(`=== DYNAMODB CONFIG: Using DynamoDB Local (Endpoint: ${localEndpoint}) ===`);
     } else if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
       // Fallback: standard DynamoDB Local on localhost
       dynamoose.aws.ddb.local();
-      console.log('DynamoDB connected to local instance on localhost:8000');
+      console.log('=== DYNAMODB CONFIG: Using DynamoDB Local default fallback (localhost:8000) ===');
     } else {
       // Fallback if production is specified without AWS configuration override
       const ddb = new dynamoose.aws.ddb.DynamoDB({
         region: config.aws.region,
       });
       dynamoose.aws.ddb.set(ddb);
-      console.log(`DynamoDB connected to AWS region (default fallback): ${config.aws.region}`);
+      console.log(`=== DYNAMODB CONFIG: Using AWS DynamoDB fallback (Region: ${config.aws.region}) ===`);
     }
+    console.log('====================================');
   } catch (error) {
-    console.error('DynamoDB connection error:', error);
+    console.error('DynamoDB connection error during startup diagnostics:', error);
     process.exit(1);
   }
 };

@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import { logger, connectDatabase, getSecrets, updateConfig, config } from '@procurement/common';
-import routes from './index';
 
 export const app: import('express').Express = express();
 
@@ -22,7 +21,7 @@ export const bootstrapApp = async (): Promise<import('express').Express> => {
     app.use(express.json());
     app.use(cors());
 
-    app.use('/api', routes);
+    app.use('/api', (await import('./index')).default);
 
     app.get('/api/health', (req, res) => {
       res.status(200).json({ status: 'ok', service: 'finance-service', timestamp: new Date() });
