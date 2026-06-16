@@ -1,5 +1,6 @@
 import * as dynamoose from 'dynamoose';
 import { AppConfig } from '@procurement/types';
+import { getSecrets } from './aws-secrets';
 
 const config: AppConfig = {
   port: parseInt(process.env.PORT || '5000', 10),
@@ -12,9 +13,7 @@ const config: AppConfig = {
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   aws: {
     region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    s3Bucket: process.env.AWS_S3_BUCKET || 'procurement-docs',
+    s3Bucket: process.env.AWS_S3_BUCKET || 'procurement-documents-08',
     kmsKeyId: process.env.AWS_KMS_KEY_ID || '',
   },
   smtp: {
@@ -28,54 +27,32 @@ const config: AppConfig = {
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const localEndpoint = process.env.DYNAMODB_LOCAL_ENDPOINT;
-    const useAws = process.env.USE_AWS_DYNAMODB === 'true' || (config.nodeEnv === 'production' && !localEndpoint);
-
-    console.log('=== DYNAMODB STARTUP DIAGNOSTICS ===');
+    console.log('=== DYNAMODB STARTUP CONFIGURATION ===');
     console.log(`  NODE_ENV: ${config.nodeEnv}`);
-    console.log(`  USE_AWS_DYNAMODB: ${process.env.USE_AWS_DYNAMODB}`);
-    console.log(`  DYNAMODB_LOCAL_ENDPOINT: ${localEndpoint}`);
-    console.log(`  Resolved useAws flag: ${useAws}`);
-    console.log(`  Configured AWS Region: ${config.aws.region}`);
-    console.log(`  Configured AWS S3 Bucket: ${config.aws.s3Bucket}`);
-    console.log(`  AWS_ACCESS_KEY_ID present: ${!!process.env.AWS_ACCESS_KEY_ID} (${process.env.AWS_ACCESS_KEY_ID || 'empty'})`);
-    console.log(`  AWS_SECRET_ACCESS_KEY present: ${!!process.env.AWS_SECRET_ACCESS_KEY}`);
+    console.log(`  AWS Region: ${config.aws.region}`);
 
-    if (useAws) {
-      if (process.env.AWS_ACCESS_KEY_ID === 'fakeMyKeyId' || !process.env.AWS_ACCESS_KEY_ID) {
-        console.log('  [DIAGNOSTICS] Deleting fake/empty AWS_ACCESS_KEY_ID to trigger IAM Role fallback');
-        delete process.env.AWS_ACCESS_KEY_ID;
-      }
-      if (process.env.AWS_SECRET_ACCESS_KEY === 'fakeSecretAccessKey' || !process.env.AWS_SECRET_ACCESS_KEY) {
-        console.log('  [DIAGNOSTICS] Deleting fake/empty AWS_SECRET_ACCESS_KEY to trigger IAM Role fallback');
-        delete process.env.AWS_SECRET_ACCESS_KEY;
-      }
+    // 1. Fetch configurations from AWS Secrets Manager
+    try {
+      const secretId = process.env.AWS_SECRET_NAME || 'procurement/prod/app-config';
+      console.log(`  [INFO] Retrieving configuration from AWS Secrets Manager: ${secretId}`);
+      const secrets = await getSecrets();
+      updateConfig(secrets);
+      console.log('  [INFO] Successfully loaded and applied configuration from AWS Secrets Manager');
+    } catch (err: any) {
+      console.warn('  [WARNING] Could not load secrets from AWS Secrets Manager, falling back to env variables:', err.message);
     }
 
-    if (useAws) {
-      // Production or forced AWS: use IAM role / env credentials with AWS DynamoDB
-      const ddb = new dynamoose.aws.ddb.DynamoDB({
-        region: config.aws.region,
-      });
-      dynamoose.aws.ddb.set(ddb);
-      console.log(`=== DYNAMODB CONFIG: Using AWS DynamoDB (Region: ${config.aws.region}) ===`);
-    } else if (localEndpoint) {
-      // Use DynamoDB Local (Docker / local dev)
-      dynamoose.aws.ddb.local(localEndpoint);
-      console.log(`=== DYNAMODB CONFIG: Using DynamoDB Local (Endpoint: ${localEndpoint}) ===`);
-    } else if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
-      // Fallback: standard DynamoDB Local on localhost
-      dynamoose.aws.ddb.local();
-      console.log('=== DYNAMODB CONFIG: Using DynamoDB Local default fallback (localhost:8000) ===');
-    } else {
-      // Fallback if production is specified without AWS configuration override
-      const ddb = new dynamoose.aws.ddb.DynamoDB({
-        region: config.aws.region,
-      });
-      dynamoose.aws.ddb.set(ddb);
-      console.log(`=== DYNAMODB CONFIG: Using AWS DynamoDB fallback (Region: ${config.aws.region}) ===`);
-    }
-    console.log('====================================');
+    console.log(`  Target S3 Bucket: ${config.aws.s3Bucket}`);
+    console.log(`  Target KMS Key: ${config.aws.kmsKeyId || 'Not configured'}`);
+
+
+    // 3. Connect to AWS DynamoDB
+    const ddb = new dynamoose.aws.ddb.DynamoDB({
+      region: config.aws.region,
+    });
+    dynamoose.aws.ddb.set(ddb);
+    console.log(`=== DYNAMODB: Connected directly to AWS DynamoDB (Region: ${config.aws.region}) ===`);
+    console.log('======================================');
   } catch (error) {
     console.error('DynamoDB connection error during startup diagnostics:', error);
     process.exit(1);

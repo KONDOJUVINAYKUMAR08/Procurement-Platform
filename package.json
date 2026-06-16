@@ -18,6 +18,7 @@
     "build": "npm run build:backend && npm run build:frontend",
     "clean:backend": "npm run clean -w @procurement/types && npm run clean -w @procurement/common && npm run clean -w @procurement/utils && npm run clean -w @procurement/middleware && npm run clean -w @procurement/identity-service && npm run clean -w @procurement/procurement-service && npm run clean -w @procurement/finance-service && npm run clean -w @procurement/document-service && rimraf backend/gateway/api-gateway/dist",
     "seed": "ts-node -r tsconfig-paths/register backend/scripts/seed.ts",
+    "bootstrap-admin": "ts-node -r tsconfig-paths/register backend/scripts/bootstrap-admin.ts",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"

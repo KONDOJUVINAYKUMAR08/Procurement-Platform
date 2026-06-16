@@ -31,8 +31,9 @@ COPY tsconfig.base.json ./
 # Build all backend workspaces
 RUN npm run build:backend
 
-# Compile the seed script
+# Compile the seed and bootstrap scripts
 RUN npx tsc backend/scripts/seed.ts --resolveJsonModule --esModuleInterop --target es2020 --module commonjs --skipLibCheck true
+RUN npx tsc backend/scripts/bootstrap-admin.ts --resolveJsonModule --esModuleInterop --target es2020 --module commonjs --skipLibCheck true
 
 # Production stage
 FROM node:20-alpine
@@ -67,8 +68,9 @@ COPY --from=builder /app/backend/services/document-service/package.json ./backen
 COPY --from=builder /app/backend/gateway/api-gateway/dist ./backend/gateway/api-gateway/dist
 COPY --from=builder /app/backend/gateway/api-gateway/package.json ./backend/gateway/api-gateway/
 
-# Copy compiled seed script
+# Copy compiled seed and bootstrap scripts
 COPY --from=builder /app/backend/scripts/seed.js ./backend/scripts/seed.js
+COPY --from=builder /app/backend/scripts/bootstrap-admin.js ./backend/scripts/bootstrap-admin.js
 
 RUN npm ci --omit=dev
 

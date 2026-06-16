@@ -107,7 +107,7 @@ export const sendEmail = async (to: string, subject: string, htmlBody: string): 
   };
 
   try {
-    if (config.nodeEnv === 'development' && (!process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID === 'fakeMyKeyId')) {
+    if (config.nodeEnv === 'development') {
       console.log(`[Mock SES Email] Sent email to ${to}:\nSubject: ${subject}\nBody: ${htmlBody}`);
       return;
     }

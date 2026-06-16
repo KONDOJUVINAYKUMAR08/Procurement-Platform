@@ -27,6 +27,11 @@ const clearTable = async (name: string, model: any) => {
 };
 
 const seedData = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('CRITICAL WARNING: Database seeding is NOT allowed in production environment as it clears tables! Aborting.');
+    process.exit(1);
+  }
+
   try {
     console.log('Connected to database check starts...');
     await connectDatabase();

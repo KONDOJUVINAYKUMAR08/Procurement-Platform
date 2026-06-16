@@ -255,8 +255,6 @@ export interface AppConfig {
   corsOrigin: string;
   aws: {
     region: string;
-    accessKeyId: string;
-    secretAccessKey: string;
     s3Bucket: string;
     kmsKeyId: string;
   };

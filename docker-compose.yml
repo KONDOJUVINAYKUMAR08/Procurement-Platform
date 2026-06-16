@@ -1,17 +1,4 @@
 services:
-  # ── DynamoDB Local ──────────────────────────────────────────────────────────
-  dynamodb-local:
-    image: amazon/dynamodb-local:latest
-    container_name: procurement-dynamodb-local
-    ports:
-      - '8000:8000'
-    command: '-jar DynamoDBLocal.jar -sharedDb -inMemory'
-    healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:8000/ 2>/dev/null || exit 0']
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
   # ── Backend (API Gateway — monolith) ────────────────────────────────────────
   backend:
     build:
@@ -23,13 +10,10 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5000
-      DYNAMODB_LOCAL_ENDPOINT: ${DYNAMODB_LOCAL_ENDPOINT:-http://dynamodb-local:8000}
-      USE_AWS_DYNAMODB: ${USE_AWS_DYNAMODB:-false}
       AWS_REGION: ${AWS_REGION:-us-east-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-fakeMyKeyId}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-fakeSecretAccessKey}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-procurement-documents-08}
       AWS_KMS_KEY_ID: ${AWS_KMS_KEY_ID:-}
+      AWS_SECRET_NAME: ${AWS_SECRET_NAME:-procurement/prod/app-config}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_12345}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_change_in_production_12345}
       JWT_EXPIRY: 15m
@@ -40,9 +24,6 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@procureflow.com}
-    depends_on:
-      dynamodb-local:
-        condition: service_healthy
     restart: unless-stopped
 
   # ── Frontend (Nginx + React build) ─────────────────────────────────────────
@@ -65,16 +46,27 @@ services:
     container_name: procurement-seed
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      DYNAMODB_LOCAL_ENDPOINT: ${DYNAMODB_LOCAL_ENDPOINT:-http://dynamodb-local:8000}
-      USE_AWS_DYNAMODB: ${USE_AWS_DYNAMODB:-false}
       AWS_REGION: ${AWS_REGION:-us-east-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-fakeMyKeyId}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-fakeSecretAccessKey}
+      AWS_SECRET_NAME: ${AWS_SECRET_NAME:-procurement/prod/app-config}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_12345}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_change_in_production_12345}
-    depends_on:
-      dynamodb-local:
-        condition: service_healthy
     command: ['node', '-e', "require('./backend/scripts/seed.js')"]
     profiles:
       - seed
+
+  # ── Bootstrap Admin (one-shot, run with --profile bootstrap) ────────────────
+  bootstrap-admin:
+    build:
+      context: .
+      dockerfile: backend/gateway/api-gateway/Dockerfile
+    container_name: procurement-bootstrap-admin
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_SECRET_NAME: ${AWS_SECRET_NAME:-procurement/prod/app-config}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_12345}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_change_in_production_12345}
+    command: ['node', '-e', "require('./backend/scripts/bootstrap-admin.js')"]
+    profiles:
+      - bootstrap
+

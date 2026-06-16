@@ -6,16 +6,6 @@ export const app: import('express').Express = express();
 
 export const bootstrapApp = async (): Promise<import('express').Express> => {
   try {
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        const secrets = await getSecrets();
-        updateConfig(secrets);
-        logger.info('Successfully loaded secrets from AWS Secrets Manager');
-      } catch (err) {
-        logger.error('Failed to load secrets, falling back to environment variables', err);
-      }
-    }
-
     await connectDatabase();
 
     app.use(express.json());
