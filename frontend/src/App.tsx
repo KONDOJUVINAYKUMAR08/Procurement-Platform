@@ -23,11 +23,13 @@ import Reports from './modules/dashboard/Reports';
 import UserManagement from './modules/identity/UserManagement';
 import Settings from './modules/identity/Settings';
 import LoadingScreen from './components/common/LoadingScreen';
+import InvoiceIntelligence from './modules/ai/InvoiceIntelligence';
 
 // Role sets mirror the Sidebar visibility so direct-URL access matches the menu.
 const PROCUREMENT_ROLES = ['admin', 'procurement_manager', 'auditor'];
 const ORDER_ROLES = ['admin', 'procurement_manager', 'finance', 'auditor', 'vendor'];
 const INVOICE_ROLES = ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'];
+const AI_INVOICE_ROLES = ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'];
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +97,9 @@ function AppRoutes() {
             <Payments />
           </RoleRoute>
         } />
+
+        {/* AI */}
+        <Route path="ai/invoices" element={<RoleRoute roles={AI_INVOICE_ROLES}><InvoiceIntelligence /></RoleRoute>} />
 
         {/* HR & Payroll — temporarily removed from scope; redirect any stale links */}
         <Route path="hr/*" element={<Navigate to="/" replace />} />

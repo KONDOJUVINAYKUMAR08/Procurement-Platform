@@ -15,6 +15,7 @@ COPY backend/services/identity-service/package.json ./backend/services/identity-
 COPY backend/services/procurement-service/package.json ./backend/services/procurement-service/
 COPY backend/services/finance-service/package.json ./backend/services/finance-service/
 COPY backend/services/document-service/package.json ./backend/services/document-service/
+COPY backend/services/ai-service/package.json ./backend/services/ai-service/
 
 COPY backend/gateway/api-gateway/package.json ./backend/gateway/api-gateway/
 
@@ -71,6 +72,9 @@ COPY --from=builder /app/backend/services/finance-service/package.json ./backend
 
 COPY --from=builder /app/backend/services/document-service/dist ./backend/services/document-service/dist
 COPY --from=builder /app/backend/services/document-service/package.json ./backend/services/document-service/
+
+COPY --from=builder /app/backend/services/ai-service/dist ./backend/services/ai-service/dist
+COPY --from=builder /app/backend/services/ai-service/package.json ./backend/services/ai-service/
 
 COPY --from=builder /app/backend/gateway/api-gateway/dist ./backend/gateway/api-gateway/dist
 COPY --from=builder /app/backend/gateway/api-gateway/package.json ./backend/gateway/api-gateway/

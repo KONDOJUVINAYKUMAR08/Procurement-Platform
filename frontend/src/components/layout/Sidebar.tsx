@@ -20,6 +20,7 @@ import {
   CreditCard,
   ChevronDown,
   ChevronRight,
+  ScanSearch,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -125,6 +126,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed = false })
     { label: 'Payments', path: '/payments', icon: <CreditCard size={18} />, roles: ['admin', 'finance', 'auditor'] },
   ];
 
+  // ── AI Group ─────────────────────────────────────────────────────
+  const aiItems: NavItem[] = [
+    { label: 'Invoice Intelligence', path: '/ai/invoices', icon: <ScanSearch size={18} />, roles: ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'] },
+  ];
+
   // ── System Group ─────────────────────────────────────────────────
   const systemItems: NavItem[] = [
     { label: 'Documents', path: '/documents', icon: <FolderOpen size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
@@ -139,6 +145,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed = false })
 
   const filteredProcurement = filter(procurementItems);
   const filteredFinance = filter(financeItems);
+  const filteredAi = filter(aiItems);
   const filteredSystem = filter(systemItems);
 
   const SidebarContent: React.FC<{ collapsed?: boolean }> = ({ collapsed = false }) => (
@@ -165,6 +172,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed = false })
         {filteredFinance.length > 0 && (
           <NavGroup label="Finance" collapsed={collapsed}>
             {filteredFinance.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} collapsed={collapsed} />)}
+          </NavGroup>
+        )}
+
+        {filteredAi.length > 0 && (
+          <NavGroup label="AI" collapsed={collapsed}>
+            {filteredAi.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} collapsed={collapsed} />)}
           </NavGroup>
         )}
 

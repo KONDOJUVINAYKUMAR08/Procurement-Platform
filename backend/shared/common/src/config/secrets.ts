@@ -16,6 +16,11 @@ const config: AppConfig = {
     s3Bucket: process.env.AWS_S3_BUCKET || 'procurement-documents-08',
     kmsKeyId: process.env.AWS_KMS_KEY_ID || '',
   },
+  bedrock: {
+    region: process.env.AWS_BEDROCK_REGION || process.env.AWS_REGION || 'us-east-1',
+    textModelId: process.env.AWS_BEDROCK_TEXT_MODEL_ID || 'amazon.nova-pro-v1:0',
+    embeddingModelId: process.env.AWS_BEDROCK_EMBEDDING_MODEL_ID || 'amazon.nova-2-multimodal-embeddings-v1:0',
+  },
   smtp: {
     host: process.env.SMTP_HOST || 'smtp.ethereal.email',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -66,6 +71,9 @@ export const updateConfig = (secrets: Record<string, string>) => {
   if (secrets.AWS_REGION) config.aws.region = secrets.AWS_REGION;
   if (secrets.AWS_S3_BUCKET) config.aws.s3Bucket = secrets.AWS_S3_BUCKET;
   if (secrets.AWS_KMS_KEY_ID) config.aws.kmsKeyId = secrets.AWS_KMS_KEY_ID;
+  if (secrets.AWS_BEDROCK_REGION) config.bedrock.region = secrets.AWS_BEDROCK_REGION;
+  if (secrets.AWS_BEDROCK_TEXT_MODEL_ID) config.bedrock.textModelId = secrets.AWS_BEDROCK_TEXT_MODEL_ID;
+  if (secrets.AWS_BEDROCK_EMBEDDING_MODEL_ID) config.bedrock.embeddingModelId = secrets.AWS_BEDROCK_EMBEDDING_MODEL_ID;
 };
 
 export default config;

@@ -23,7 +23,8 @@
     "@procurement/identity-service": "*",
     "@procurement/procurement-service": "*",
     "@procurement/finance-service": "*",
-    "@procurement/document-service": "*"
+    "@procurement/document-service": "*",
+    "@procurement/ai-service": "*"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

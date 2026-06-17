@@ -13,3 +13,9 @@ export {
   decryptField,
   sendEmail,
 } from './config/aws';
+export {
+  invokeText,
+  invokeChat,
+  invokeEmbedding,
+  bedrockClient,
+} from './config/bedrock';

@@ -54,6 +54,7 @@ export const bootstrapApp = async (): Promise<import('express').Express> => {
     apiRouter.use((await import('@procurement/procurement-service')).default);
     apiRouter.use((await import('@procurement/finance-service')).default);
     apiRouter.use((await import('@procurement/document-service')).default);
+    apiRouter.use((await import('@procurement/ai-service')).default);
 
     // Health check
     app.get('/api/health', (req, res) => {

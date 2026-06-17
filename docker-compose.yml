@@ -14,6 +14,9 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-procurement-documents-08}
       AWS_KMS_KEY_ID: ${AWS_KMS_KEY_ID:-}
       AWS_SECRET_NAME: ${AWS_SECRET_NAME:-procurement/prod/app-config}
+      AWS_BEDROCK_REGION: ${AWS_BEDROCK_REGION:-us-east-1}
+      AWS_BEDROCK_TEXT_MODEL_ID: ${AWS_BEDROCK_TEXT_MODEL_ID:-amazon.nova-pro-v1:0}
+      AWS_BEDROCK_EMBEDDING_MODEL_ID: ${AWS_BEDROCK_EMBEDDING_MODEL_ID:-amazon.nova-2-multimodal-embeddings-v1:0}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_12345}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_change_in_production_12345}
       JWT_EXPIRY: 15m

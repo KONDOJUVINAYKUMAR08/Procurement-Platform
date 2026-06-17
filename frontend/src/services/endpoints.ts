@@ -342,6 +342,31 @@ export const reportApi = {
   },
 };
 
+// ── AI API ──────────────────────────────────────────────────────────────────
+
+export const aiApi = {
+  // Invoice Intelligence
+  analyzeInvoice: async (invoiceId: string): Promise<any> => {
+    const res = await api.post(`/ai/invoices/${invoiceId}/analyze`);
+    return item<any>(res);
+  },
+  getInvoiceAnalysis: async (invoiceId: string): Promise<any> => {
+    const res = await api.get(`/ai/invoices/${invoiceId}`);
+    return item<any>(res);
+  },
+  // Feedback (quality tracking)
+  sendFeedback: async (data: {
+    feature: 'chat' | 'contract' | 'search' | 'invoice';
+    referenceId?: string;
+    rating: 'up' | 'down';
+    comment?: string;
+    context?: Record<string, unknown>;
+  }): Promise<any> => {
+    const res = await api.post('/ai/feedback', data);
+    return item<any>(res);
+  },
+};
+
 // ── HR API ────────────────────────────────────────────────────────────────────
 
 export const hrApi = {
