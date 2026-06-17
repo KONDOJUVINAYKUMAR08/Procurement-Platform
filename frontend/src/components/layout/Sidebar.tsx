@@ -20,11 +20,6 @@ import {
   CreditCard,
   ChevronDown,
   ChevronRight,
-  Briefcase,
-  Clock,
-  DollarSign,
-  FileSignature,
-  Award,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -119,15 +114,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Payments', path: '/payments', icon: <CreditCard size={18} />, roles: ['admin', 'finance', 'auditor'] },
   ];
 
-  // ── HR Group ─────────────────────────────────────────────────────
-  const hrItems: NavItem[] = [
-    { label: 'Employees', path: '/hr/employees', icon: <Briefcase size={18} />, roles: ['admin'] },
-    { label: 'Attendance', path: '/hr/attendance', icon: <Clock size={18} />, roles: ['admin', 'employee'] },
-    { label: 'Payroll', path: '/hr/payroll', icon: <DollarSign size={18} />, roles: ['admin', 'finance', 'employee'] },
-    { label: 'Letters', path: '/hr/letters', icon: <FileSignature size={18} />, roles: ['admin', 'employee'] },
-    { label: 'Certificates', path: '/hr/certificates', icon: <Award size={18} />, roles: ['admin', 'employee'] },
-  ];
-
   // ── System Group ─────────────────────────────────────────────────
   const systemItems: NavItem[] = [
     { label: 'Documents', path: '/documents', icon: <FolderOpen size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
@@ -142,7 +128,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const filteredProcurement = filter(procurementItems);
   const filteredFinance = filter(financeItems);
-  const filteredHR = filter(hrItems);
   const filteredSystem = filter(systemItems);
 
   const SidebarContent = () => (
@@ -169,12 +154,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {filteredFinance.length > 0 && (
           <NavGroup label="Finance">
             {filteredFinance.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} />)}
-          </NavGroup>
-        )}
-
-        {filteredHR.length > 0 && (
-          <NavGroup label="HR & Payroll">
-            {filteredHR.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} />)}
           </NavGroup>
         )}
 

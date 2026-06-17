@@ -38,6 +38,13 @@ RUN npx tsc backend/scripts/bootstrap-admin.ts --resolveJsonModule --esModuleInt
 # Production stage
 FROM node:20-alpine
 
+# Puppeteer (invoice/payslip/letter PDF generation) needs a real Chromium binary —
+# the bundled download it tries by default is a glibc build that won't run on
+# Alpine's musl libc, so install Alpine's own Chromium and point Puppeteer at it.
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

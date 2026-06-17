@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                   <XAxis dataKey="name" stroke="#555" fontSize={12} />
-                  <YAxis stroke="#555" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                  <YAxis stroke="#555" fontSize={12} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area type="monotone" dataKey="amount" stroke="#ffffff" strokeWidth={2} fill="url(#colorAmount)" />
                 </AreaChart>
@@ -224,14 +224,14 @@ const Dashboard: React.FC = () => {
           <div className="space-y-3 mt-4 max-h-64 overflow-y-auto">
             {(stats?.recentActivity || []).map((activity: any, i: number) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/[0.02] transition-colors">
-                <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-xs font-medium text-white shrink-0 mt-0.5">
-                  {activity.userId?.firstName?.[0]}{activity.userId?.lastName?.[0]}
+                <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-neutral-300 shrink-0 mt-0.5">
+                  <Activity size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white">
-                    <span className="font-medium">{activity.userId?.firstName} {activity.userId?.lastName}</span>
-                    {' '}{activity.action}{' '}
-                    <span className="text-neutral-400">{activity.entity}</span>
+                    <span className="font-medium capitalize">{activity.action}</span>
+                    {' '}
+                    <span className="text-neutral-400 capitalize">{(activity.entity || '').replace(/_/g, ' ')}</span>
                   </p>
                   <p className="text-xs text-neutral-500 mt-0.5">{formatRelativeTime(activity.createdAt)}</p>
                 </div>
