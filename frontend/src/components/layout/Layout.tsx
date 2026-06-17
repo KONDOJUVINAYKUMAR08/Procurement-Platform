@@ -8,7 +8,24 @@ import { Shield, Key, AlertCircle, CheckCircle } from 'lucide-react';
 
 const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebarCollapsed') === 'true'; } catch { return false; }
+  });
   const { user, updateUser } = useAuth();
+
+  // Below the lg breakpoint the toggle opens/closes the mobile overlay;
+  // at lg and above it collapses the fixed sidebar down to an icon rail.
+  const toggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(o => !o);
+    } else {
+      setSidebarCollapsed(c => {
+        const next = !c;
+        try { localStorage.setItem('sidebarCollapsed', String(next)); } catch { /* ignore */ }
+        return next;
+      });
+    }
+  };
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -132,12 +149,13 @@ const Layout: React.FC = () => {
       )}
 
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} collapsed={sidebarCollapsed} />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen lg:pl-64">
-        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      {/* Main content — min-w-0 keeps wide tables/cards from forcing this
+          flex child (and the whole page) wider than the viewport. */}
+      <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-[padding] duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
+        <Header onMenuToggle={toggleSidebar} />
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
