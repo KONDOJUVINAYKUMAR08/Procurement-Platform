@@ -1,10 +1,8 @@
-import { invokeText, invokeEmbedding, logger, config } from '@procurement/common';
-import { Document } from '@procurement/document-service';
-import { Contract } from '@procurement/procurement-service';
-import { Invoice } from '@procurement/finance-service';
+import { invokeText, invokeEmbedding, logger } from '@procurement/common';
 import { Embedding } from '../models/Embedding';
-import { extractTextFromS3 } from './document-text';
+import { extractText } from './document-text';
 import { CallerScope } from './rbac-scope.service';
+import { platformData, fetchFileBuffer } from './platform-data';
 
 const toPlain = (doc: any) => (doc && typeof doc.toJSON === 'function' ? doc.toJSON() : doc);
 
@@ -46,14 +44,14 @@ const cosineSimilarity = (a: number[], b: number[]): number => {
 
 export class SearchService {
   /** Resolve the vendor counterparty for a document, for RBAC denormalization. */
-  private async resolveOwnerVendorId(doc: any): Promise<string | undefined> {
+  private async resolveOwnerVendorId(token: string, doc: any): Promise<string | undefined> {
     try {
       if (doc.category === 'contract' && doc.relatedId) {
-        const c = toPlain(await Contract.get(doc.relatedId));
+        const c = await platformData.contract(token, doc.relatedId);
         return c?.vendor;
       }
       if (doc.category === 'invoice' && doc.relatedId) {
-        const i = toPlain(await Invoice.get(doc.relatedId));
+        const i = await platformData.invoice(token, doc.relatedId);
         return i?.vendorId || i?.vendor;
       }
     } catch { /* best effort */ }
@@ -61,12 +59,13 @@ export class SearchService {
   }
 
   /** Index an uploaded document: extract text, chunk, embed, store. Re-indexing replaces prior chunks. */
-  async indexDocument(documentId: string) {
-    const doc = toPlain(await Document.get(documentId));
+  async indexDocument(token: string, documentId: string) {
+    const dl = await platformData.documentDownload(token, documentId);
+    const doc = dl?.document;
     if (!doc) throw new Error('Document not found');
 
-    const bucket = doc.s3Bucket || config.aws.s3Bucket;
-    const { text, reason } = await extractTextFromS3(bucket, doc.s3Key, doc.mimeType, doc.originalName);
+    const buffer = await fetchFileBuffer(dl.url);
+    const { text, reason } = await extractText(buffer, doc.mimeType, doc.originalName);
     if (!text) throw new Error(reason || 'Could not extract text from this document.');
 
     // Remove any previous chunks for this document (idempotent re-index).
@@ -77,7 +76,7 @@ export class SearchService {
       logger.warn('Could not clear prior embeddings: ' + (err as Error).message);
     }
 
-    const ownerVendorId = await this.resolveOwnerVendorId(doc);
+    const ownerVendorId = await this.resolveOwnerVendorId(token, doc);
     const chunks = chunkText(text);
     let indexed = 0;
 

@@ -5,7 +5,10 @@ AWS.config.update({
   region: config.aws.region,
 });
 
-export const s3 = new AWS.S3();
+// signatureVersion 'v4' is REQUIRED for presigned URLs of KMS-encrypted (SSE-KMS)
+// objects — without it, S3 returns "Requests specifying Server Side Encryption
+// with AWS KMS managed keys require AWS Signature Version 4." on download.
+export const s3 = new AWS.S3({ signatureVersion: 'v4' });
 export const kms = new AWS.KMS();
 export const ses = new AWS.SES({ apiVersion: '2010-12-01' });
 

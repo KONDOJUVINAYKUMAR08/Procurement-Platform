@@ -19,3 +19,11 @@ export {
   invokeEmbedding,
   bedrockClient,
 } from './config/bedrock';
+export {
+  serviceUrls,
+  serviceRequest,
+  serviceGet,
+  servicePost,
+  serviceList,
+} from './config/services';
+export type { ServiceName } from './config/services';
