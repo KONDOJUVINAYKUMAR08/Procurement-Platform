@@ -6,3 +6,48 @@ global:
   kmsKeyId: ""
   acmCertArn: ""
   wafAclArn: ""
+
+# Per-service image and serviceAccount overrides.
+# image.repository and image.tag are updated at deploy time by the CD pipeline.
+# serviceAccount.annotations are injected with the IRSA role ARN by the CD pipeline.
+identity-service:
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
+
+procurement-service:
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
+
+finance-service:
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
+
+document-service:
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
+
+ai-service:
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
+
+frontend:
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}

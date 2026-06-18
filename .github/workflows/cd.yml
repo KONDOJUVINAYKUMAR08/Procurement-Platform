@@ -3,6 +3,7 @@ name: CD (GitOps Deploy)
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:   # allows manual run from any branch via GitHub Actions UI
 
 permissions:
   id-token: write
@@ -73,7 +74,7 @@ jobs:
     needs: build-and-push-ecr
     runs-on: ubuntu-latest
     outputs:
-      acm_cert_arn: ${{ steps.outputs.outputs.acm_cert_arn }}
+      acm_cert_arn: ${{ steps.tf-outputs.outputs.acm_cert_arn }}
     steps:
       - uses: actions/checkout@v4
 
@@ -85,6 +86,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Apply (shared)
         working-directory: terraform/environments/shared
@@ -93,7 +96,7 @@ jobs:
           terraform apply -auto-approve
 
       - name: Capture outputs
-        id: outputs
+        id: tf-outputs
         working-directory: terraform/environments/shared
         run: echo "acm_cert_arn=$(terraform output -raw acm_certificate_arn)" >> $GITHUB_OUTPUT
 
@@ -102,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     outputs:
-      irsa_arns: ${{ steps.outputs.outputs.irsa_arns }}
+      irsa_arns: ${{ steps.tf-outputs.outputs.irsa_arns }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -116,6 +119,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Apply (dev)
         working-directory: terraform/environments/dev
@@ -124,33 +129,49 @@ jobs:
           terraform apply -auto-approve
 
       - name: Capture outputs
-        id: outputs
+        id: tf-outputs
         working-directory: terraform/environments/dev
         run: echo "irsa_arns=$(terraform output -json irsa_role_arns | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
 
       - name: Update Helm values for dev
         env:
           IMAGE_TAG: ${{ needs.build-and-push-ecr.outputs.image_tag }}
           ACM_ARN: ${{ needs.infra-shared.outputs.acm_cert_arn }}
-          IRSA_ARNS_JSON: ${{ steps.outputs.outputs.irsa_arns }}
+          IRSA_ARNS_JSON: ${{ steps.tf-outputs.outputs.irsa_arns }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           VALUES=helm/procurement-platform/values-dev.yaml
+
           yq -i ".global.acmCertArn = \"$ACM_ARN\"" "$VALUES"
-          declare -A REPO=( [identity-service]=procurement-identity [finance-service]=procurement-finance [procurement-service]=procurement-procurement [document-service]=procurement-document [ai-service]=procurement-ai [frontend]=procurement-frontend )
+
+          declare -A REPO=(
+            [identity-service]=procurement-identity
+            [finance-service]=procurement-finance
+            [procurement-service]=procurement-procurement
+            [document-service]=procurement-document
+            [ai-service]=procurement-ai
+            [frontend]=procurement-frontend
+          )
+
           for chart in "${!REPO[@]}"; do
             irsa_arn=$(echo "$IRSA_ARNS_JSON" | jq -r --arg c "$chart" '.[$c] // ""')
-            yq -i ".[\"$chart\"].image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
-            yq -i ".[\"$chart\"].image.tag = \"$IMAGE_TAG\"" "$VALUES"
+            yq -i ".\"$chart\".image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
+            yq -i ".\"$chart\".image.tag = \"$IMAGE_TAG\"" "$VALUES"
             if [ -n "$irsa_arn" ]; then
-              yq -i ".[\"$chart\"].serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
+              yq -i ".\"$chart\".serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
             fi
           done
+
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add "$VALUES"
-          git commit -m "Update dev image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git commit -m "chore: update dev image tag to ${IMAGE_TAG}" || echo "No changes to commit"
           git push
 
   infra-and-deploy-prod:
@@ -170,6 +191,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Apply (prod)
         working-directory: terraform/environments/prod
@@ -178,31 +201,47 @@ jobs:
           terraform apply -auto-approve
 
       - name: Capture outputs
-        id: outputs
+        id: tf-outputs
         working-directory: terraform/environments/prod
         run: echo "irsa_arns=$(terraform output -json irsa_role_arns | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
 
       - name: Update Helm values for prod
         env:
           IMAGE_TAG: ${{ needs.build-and-push-ecr.outputs.image_tag }}
           ACM_ARN: ${{ needs.infra-shared.outputs.acm_cert_arn }}
-          IRSA_ARNS_JSON: ${{ steps.outputs.outputs.irsa_arns }}
+          IRSA_ARNS_JSON: ${{ steps.tf-outputs.outputs.irsa_arns }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           VALUES=helm/procurement-platform/values-prod.yaml
+
           yq -i ".global.acmCertArn = \"$ACM_ARN\"" "$VALUES"
-          declare -A REPO=( [identity-service]=procurement-identity [finance-service]=procurement-finance [procurement-service]=procurement-procurement [document-service]=procurement-document [ai-service]=procurement-ai [frontend]=procurement-frontend )
+
+          declare -A REPO=(
+            [identity-service]=procurement-identity
+            [finance-service]=procurement-finance
+            [procurement-service]=procurement-procurement
+            [document-service]=procurement-document
+            [ai-service]=procurement-ai
+            [frontend]=procurement-frontend
+          )
+
           for chart in "${!REPO[@]}"; do
             irsa_arn=$(echo "$IRSA_ARNS_JSON" | jq -r --arg c "$chart" '.[$c] // ""')
-            yq -i ".[\"$chart\"].image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
-            yq -i ".[\"$chart\"].image.tag = \"$IMAGE_TAG\"" "$VALUES"
+            yq -i ".\"$chart\".image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
+            yq -i ".\"$chart\".image.tag = \"$IMAGE_TAG\"" "$VALUES"
             if [ -n "$irsa_arn" ]; then
-              yq -i ".[\"$chart\"].serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
+              yq -i ".\"$chart\".serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
             fi
           done
+
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add "$VALUES"
-          git commit -m "Update prod image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git commit -m "chore: update prod image tag to ${IMAGE_TAG}" || echo "No changes to commit"
           git push

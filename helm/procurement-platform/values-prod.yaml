@@ -9,30 +9,60 @@ global:
 
 identity-service:
   replicaCount: 2
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
   autoscaling:
     maxReplicas: 10
 
 procurement-service:
   replicaCount: 2
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
   autoscaling:
     maxReplicas: 10
 
 finance-service:
   replicaCount: 2
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
   autoscaling:
     maxReplicas: 10
 
 document-service:
   replicaCount: 2
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
   autoscaling:
     maxReplicas: 10
 
 ai-service:
   replicaCount: 2
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
   autoscaling:
     maxReplicas: 10
 
 frontend:
   replicaCount: 2
+  image:
+    repository: ""
+    tag: "latest"
+  serviceAccount:
+    annotations: {}
   autoscaling:
     maxReplicas: 10
