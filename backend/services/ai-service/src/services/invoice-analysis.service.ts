@@ -1,44 +1,35 @@
 import { invokeText, logger } from '@procurement/common';
-import { Invoice, Payment } from '@procurement/finance-service';
-import { PurchaseOrder, Contract } from '@procurement/procurement-service';
 import { InvoiceAnalysis } from '../models/InvoiceAnalysis';
 import { runInvoiceRules, RuleContext } from './rules/invoice-rules';
+import { platformData } from './platform-data';
 
 const toPlain = (doc: any) => (doc && typeof doc.toJSON === 'function' ? doc.toJSON() : doc);
 
 export class InvoiceAnalysisService {
-  /** Fetch the raw invoice (used by the controller for ownership checks). */
-  async getInvoice(invoiceId: string) {
-    return toPlain(await Invoice.get(invoiceId));
+  /** Fetch the raw invoice from finance-service (used by the controller for ownership checks). */
+  async getInvoice(token: string, invoiceId: string) {
+    return platformData.invoice(token, invoiceId);
   }
 
   /**
    * Run the deterministic rule engine against an invoice, then ask Bedrock to
-   * narrate the findings. Bedrock CANNOT change the score/level/findings — it
-   * only fills `report` and `recommendations`.
+   * narrate the findings. Bedrock CANNOT change the score/level/findings.
    */
-  async analyze(invoiceId: string, analyzedBy: string) {
-    const invoice = toPlain(await Invoice.get(invoiceId));
+  async analyze(token: string, invoiceId: string, analyzedBy: string) {
+    const invoice = await platformData.invoice(token, invoiceId);
     if (!invoice) throw new Error('Invoice not found');
 
-    // Gather everything the rules need (scan-based, consistent with the rest of
-    // the app; invoice volume is low).
-    const allInvoices = (await Invoice.scan().exec()).map(toPlain);
+    const allInvoices = await platformData.invoices(token);
     const otherInvoices = allInvoices.filter((i: any) => i._id !== invoiceId);
 
-    let purchaseOrder = null;
-    if (invoice.purchaseOrderId) {
-      try { purchaseOrder = toPlain(await PurchaseOrder.get(invoice.purchaseOrderId)); } catch { /* not found */ }
-    }
-    let contract = null;
-    if (invoice.contractId) {
-      try { contract = toPlain(await Contract.get(invoice.contractId)); } catch { /* not found */ }
-    }
+    const purchaseOrder = invoice.purchaseOrderId ? await platformData.purchaseOrder(token, invoice.purchaseOrderId) : null;
+    const contract = invoice.contractId ? await platformData.contract(token, invoice.contractId) : null;
 
+    // Payments are informational (the rules don't use them); best-effort.
     let paymentIds: string[] = [];
     try {
-      const payments = await Payment.query('invoice').using('paymentInvoiceIndex').eq(invoiceId).exec();
-      paymentIds = payments.map((p: any) => p._id);
+      const payments = await platformData.payments(token);
+      paymentIds = payments.filter((p: any) => p.invoice === invoiceId).map((p: any) => p._id);
     } catch (err) {
       logger.warn('Could not load payments for invoice analysis: ' + (err as Error).message);
     }
@@ -67,7 +58,6 @@ export class InvoiceAnalysisService {
       report = typeof parsed?.report === 'string' ? parsed.report : raw;
       recommendations = Array.isArray(parsed?.recommendations) ? parsed.recommendations.map(String) : [];
     } catch (err) {
-      // Bedrock failure must not lose the deterministic result — degrade gracefully.
       logger.error('Bedrock narrative generation failed for invoice analysis: ' + (err as Error).message);
       report = ruleResult.findings.length
         ? `Automated rule checks flagged ${ruleResult.findings.length} issue(s); AI narrative is temporarily unavailable.`
@@ -100,21 +90,17 @@ export class InvoiceAnalysisService {
       .eq(invoiceId)
       .exec();
     if (!rows.length) return null;
-    const sorted = rows
+    return rows
       .map(toPlain)
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    return sorted[0];
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
   }
 
   private safeParseJson(raw: string): any {
     try {
       return JSON.parse(raw);
     } catch {
-      // Bedrock sometimes wraps JSON in ```json fences — strip and retry.
       const match = raw.match(/\{[\s\S]*\}/);
-      if (match) {
-        try { return JSON.parse(match[0]); } catch { /* fall through */ }
-      }
+      if (match) { try { return JSON.parse(match[0]); } catch { /* ignore */ } }
       return null;
     }
   }

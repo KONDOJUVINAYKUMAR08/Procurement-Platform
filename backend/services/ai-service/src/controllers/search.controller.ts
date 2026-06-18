@@ -3,12 +3,14 @@ import { IAuthenticatedRequest } from '@procurement/types';
 import { sendSuccess, sendError } from '@procurement/utils';
 import searchService from '../services/search.service';
 import { resolveCallerScope } from '../services/rbac-scope.service';
+import { callerToken } from './token';
 
 export class SearchController {
   async search(req: IAuthenticatedRequest, res: Response) {
     try {
       const { query, category, topK } = req.body;
-      const scope = await resolveCallerScope(req.user!);
+      const token = callerToken(req);
+      const scope = await resolveCallerScope(req.user!, token);
       const result = await searchService.search(query, category || undefined, topK || 5, scope);
       return sendSuccess(res, result);
     } catch (error: any) {
@@ -18,7 +20,7 @@ export class SearchController {
 
   async indexDocument(req: IAuthenticatedRequest, res: Response) {
     try {
-      const result = await searchService.indexDocument(req.params.documentId);
+      const result = await searchService.indexDocument(callerToken(req), req.params.documentId);
       return sendSuccess(res, result, 'Document indexed successfully', 201);
     } catch (error: any) {
       const code = error.message === 'Document not found' ? 404 : 400;

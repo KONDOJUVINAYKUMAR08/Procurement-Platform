@@ -1,52 +1,45 @@
+# ── @procurement/finance-service — standalone microservice image ──────────────────────────
+# Multi-stage, runs as a non-root user. Contains only the shared packages and
+# this service (no other services' code), per the true-microservices split.
+
 # Build stage
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Install deps using only the workspaces this service needs (shared + itself).
+COPY package.json package-lock.json tsconfig.base.json ./
 COPY backend/shared/types/package.json ./backend/shared/types/
 COPY backend/shared/common/package.json ./backend/shared/common/
 COPY backend/shared/middleware/package.json ./backend/shared/middleware/
 COPY backend/shared/utils/package.json ./backend/shared/utils/
-
 COPY backend/services/finance-service/package.json ./backend/services/finance-service/
-
-# Install dependencies
 RUN npm install
 
-# Copy source code for shared and this specific service
+# Build shared packages then this service.
 COPY backend/shared ./backend/shared
 COPY backend/services/finance-service ./backend/services/finance-service
-COPY tsconfig.base.json ./
-
-# Build shared packages and this service
-RUN npm run build:backend --workspace=@procurement/types --workspace=@procurement/common --workspace=@procurement/utils --workspace=@procurement/middleware --workspace=@procurement/finance-service
+RUN npm run build -w @procurement/types  && npm run build -w @procurement/common  && npm run build -w @procurement/utils  && npm run build -w @procurement/middleware  && npm run build -w @procurement/finance-service
 
 # Production stage
 FROM node:20-alpine
 
+# Puppeteer (PDF generation) needs a real Chromium on Alpine/musl.
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Non-root user.
+RUN addgroup -S app && adduser -S app -G app
+
 WORKDIR /app
-
-COPY package.json package-lock.json ./
-COPY --from=builder /app/backend/shared/types/dist ./backend/shared/types/dist
-COPY --from=builder /app/backend/shared/types/package.json ./backend/shared/types/
-
-COPY --from=builder /app/backend/shared/common/dist ./backend/shared/common/dist
-COPY --from=builder /app/backend/shared/common/package.json ./backend/shared/common/
-
-COPY --from=builder /app/backend/shared/middleware/dist ./backend/shared/middleware/dist
-COPY --from=builder /app/backend/shared/middleware/package.json ./backend/shared/middleware/
-
-COPY --from=builder /app/backend/shared/utils/dist ./backend/shared/utils/dist
-COPY --from=builder /app/backend/shared/utils/package.json ./backend/shared/utils/
-
-COPY --from=builder /app/backend/services/finance-service/dist ./backend/services/finance-service/dist
-COPY --from=builder /app/backend/services/finance-service/package.json ./backend/services/finance-service/
-
-RUN npm ci --omit=dev
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/backend/shared ./backend/shared
+COPY --from=builder /app/backend/services/finance-service ./backend/services/finance-service
 
 ENV NODE_ENV=production
+ENV PORT=5002
 EXPOSE 5002
+USER app
 
 CMD ["node", "backend/services/finance-service/dist/server.js"]

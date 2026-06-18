@@ -1,27 +1,32 @@
-import { invokeText, logger, config } from '@procurement/common';
-import { Document } from '@procurement/document-service';
+import { invokeText, logger } from '@procurement/common';
 import { ContractAnalysis } from '../models/ContractAnalysis';
-import { extractTextFromS3 } from './document-text';
+import { extractText } from './document-text';
+import { platformData, fetchFileBuffer } from './platform-data';
 
 const toPlain = (doc: any) => (doc && typeof doc.toJSON === 'function' ? doc.toJSON() : doc);
 const MAX_CHARS = 24000; // bound the prompt — first ~24k chars cover most contracts' key terms
 
 export class ContractAnalysisService {
-  async getDocument(documentId: string) {
-    return toPlain(await Document.get(documentId));
-  }
-
   /**
    * Extract structured contract metadata + a summary + renewal-risk assessment
-   * from an already-uploaded contract document using Bedrock.
+   * from an already-uploaded contract document using Bedrock. The file is pulled
+   * from document-service's presigned URL (no direct S3 access here).
    */
-  async analyze(documentId: string, analyzedBy: string) {
-    const doc = toPlain(await Document.get(documentId));
+  async analyze(token: string, documentId: string, analyzedBy: string) {
+    const dl = await platformData.documentDownload(token, documentId);
+    const doc = dl?.document;
     if (!doc) throw new Error('Document not found');
     if (doc.category !== 'contract') throw new Error('This document is not categorised as a contract.');
 
-    const bucket = doc.s3Bucket || config.aws.s3Bucket;
-    const { text, reason } = await extractTextFromS3(bucket, doc.s3Key, doc.mimeType, doc.originalName);
+    let text: string | null = null;
+    let reason: string | undefined;
+    try {
+      const buffer = await fetchFileBuffer(dl.url);
+      ({ text, reason } = await extractText(buffer, doc.mimeType, doc.originalName));
+    } catch (err) {
+      reason = 'Could not download the document file.';
+      logger.error('Contract file download failed: ' + (err as Error).message);
+    }
 
     if (!text) {
       // Persist a failed analysis so the UI can show a clear reason.

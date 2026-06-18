@@ -1,26 +1,19 @@
-import { s3, logger } from '@procurement/common';
+import { logger } from '@procurement/common';
 
 /**
- * Fetch an S3 object and extract its plain text.
- * PDF is supported via pdf-parse. DOCX and other binary formats are an explicit
- * v1 limitation — they return null so callers can report "unsupported format"
- * rather than feeding garbage to the model.
+ * Extract plain text from an already-downloaded file buffer.
+ * PDF is supported via pdf-parse; plain text passes through. DOCX/other binary
+ * formats are an explicit v1 limitation — they return null so callers can report
+ * "unsupported format" rather than feeding garbage to the model.
+ *
+ * Note: ai-service does NOT touch S3 directly — it receives the file bytes from
+ * document-service's presigned URL (see platform-data.ts).
  */
-export const extractTextFromS3 = async (
-  bucket: string,
-  key: string,
+export const extractText = async (
+  buffer: Buffer,
   mimeType: string,
   originalName: string
 ): Promise<{ text: string | null; reason?: string }> => {
-  let buffer: Buffer;
-  try {
-    const obj = await s3.getObject({ Bucket: bucket, Key: key }).promise();
-    buffer = obj.Body as Buffer;
-  } catch (err) {
-    logger.error('S3 getObject failed for document text extraction: ' + (err as Error).message);
-    return { text: null, reason: 'Could not read the file from storage.' };
-  }
-
   const name = (originalName || '').toLowerCase();
   const isPdf = mimeType === 'application/pdf' || name.endsWith('.pdf');
   const isPlain = mimeType?.startsWith('text/') || name.endsWith('.txt');
@@ -31,7 +24,6 @@ export const extractTextFromS3 = async (
 
   if (isPdf) {
     try {
-      // Lazy require so the dependency only loads when actually needed.
       const pdfParse = require('pdf-parse');
       const parsed = await pdfParse(buffer);
       const text = (parsed.text || '').trim();

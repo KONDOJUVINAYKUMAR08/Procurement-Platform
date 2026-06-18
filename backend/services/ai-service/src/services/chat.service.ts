@@ -1,10 +1,8 @@
 import { invokeChat, logger } from '@procurement/common';
 import { IAuthPayload } from '@procurement/types';
-import { Invoice, Payment, Customer } from '@procurement/finance-service';
-import { Vendor, PurchaseOrder, Contract } from '@procurement/procurement-service';
 import { resolveCallerScope, CallerScope } from './rbac-scope.service';
+import { platformData } from './platform-data';
 
-const toPlain = (doc: any) => (doc && typeof doc.toJSON === 'function' ? doc.toJSON() : doc);
 const CAP = 40; // cap each list to bound the prompt size
 
 interface ChatMessage {
@@ -16,10 +14,11 @@ export class ChatService {
   /**
    * Assemble a compact, role-scoped snapshot of procurement data and ask Nova
    * Pro to answer the user's question from it. Stateless — the client sends the
-   * conversation history with each request.
+   * conversation history with each request. All data is fetched over REST from
+   * the owning services (no in-process model access).
    */
-  async chat(user: IAuthPayload, messages: ChatMessage[], structured: boolean) {
-    const scope = await resolveCallerScope(user);
+  async chat(user: IAuthPayload, token: string, messages: ChatMessage[], structured: boolean) {
+    const scope = await resolveCallerScope(user, token);
 
     // A vendor whose identity can't be resolved gets no data (fail closed).
     if (scope.isVendor && scope.unresolvedVendor) {
@@ -30,7 +29,7 @@ export class ChatService {
       };
     }
 
-    const context = await this.buildContext(scope);
+    const context = await this.buildContext(scope, token);
 
     const system =
       'You are ProcureFlow Copilot, an assistant for a procurement platform. ' +
@@ -61,16 +60,16 @@ export class ChatService {
   }
 
   /** Gather a scoped, summarized snapshot of the data the Copilot can reason over. */
-  private async buildContext(scope: CallerScope) {
+  private async buildContext(scope: CallerScope, token: string) {
     const now = Date.now();
 
     const [allInvoices, allPayments, allVendors, allPos, allContracts, allCustomers] = await Promise.all([
-      Invoice.scan().exec().then((r) => r.map(toPlain)),
-      Payment.scan().exec().then((r) => r.map(toPlain)),
-      Vendor.scan().exec().then((r) => r.map(toPlain)),
-      PurchaseOrder.scan().exec().then((r) => r.map(toPlain)),
-      Contract.scan().exec().then((r) => r.map(toPlain)),
-      Customer.scan().exec().then((r) => r.map(toPlain)),
+      platformData.invoices(token),
+      platformData.payments(token),
+      platformData.vendors(token),
+      platformData.purchaseOrders(token),
+      platformData.contracts(token),
+      platformData.customers(token),
     ]);
 
     // Vendor scoping: a vendor sees only rows tied to their vendorId.

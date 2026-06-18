@@ -1,4 +1,4 @@
-# ── @procurement/procurement-service — standalone microservice image ──────────────────────────
+# ── @procurement/ai-service — standalone microservice image ──────────────────────────
 # Multi-stage, runs as a non-root user. Contains only the shared packages and
 # this service (no other services' code), per the true-microservices split.
 
@@ -12,13 +12,13 @@ COPY backend/shared/types/package.json ./backend/shared/types/
 COPY backend/shared/common/package.json ./backend/shared/common/
 COPY backend/shared/middleware/package.json ./backend/shared/middleware/
 COPY backend/shared/utils/package.json ./backend/shared/utils/
-COPY backend/services/procurement-service/package.json ./backend/services/procurement-service/
+COPY backend/services/ai-service/package.json ./backend/services/ai-service/
 RUN npm install
 
 # Build shared packages then this service.
 COPY backend/shared ./backend/shared
-COPY backend/services/procurement-service ./backend/services/procurement-service
-RUN npm run build -w @procurement/types  && npm run build -w @procurement/common  && npm run build -w @procurement/utils  && npm run build -w @procurement/middleware  && npm run build -w @procurement/procurement-service
+COPY backend/services/ai-service ./backend/services/ai-service
+RUN npm run build -w @procurement/types  && npm run build -w @procurement/common  && npm run build -w @procurement/utils  && npm run build -w @procurement/middleware  && npm run build -w @procurement/ai-service
 
 # Production stage
 FROM node:20-alpine
@@ -30,11 +30,11 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/backend/shared ./backend/shared
-COPY --from=builder /app/backend/services/procurement-service ./backend/services/procurement-service
+COPY --from=builder /app/backend/services/ai-service ./backend/services/ai-service
 
 ENV NODE_ENV=production
-ENV PORT=5003
-EXPOSE 5003
+ENV PORT=5006
+EXPOSE 5006
 USER app
 
-CMD ["node", "backend/services/procurement-service/dist/server.js"]
+CMD ["node", "backend/services/ai-service/dist/server.js"]
