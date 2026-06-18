@@ -21,6 +21,9 @@ import {
   ChevronDown,
   ChevronRight,
   ScanSearch,
+  Sparkles,
+  FileSearch,
+  Search,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -128,6 +131,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed = false })
 
   // ── AI Group ─────────────────────────────────────────────────────
   const aiItems: NavItem[] = [
+    { label: 'Copilot', path: '/ai', icon: <Sparkles size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
+    { label: 'Document Search', path: '/ai/search', icon: <Search size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
+    { label: 'Contract Intelligence', path: '/ai/contracts', icon: <FileSearch size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'auditor'] },
     { label: 'Invoice Intelligence', path: '/ai/invoices', icon: <ScanSearch size={18} />, roles: ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'] },
   ];
 

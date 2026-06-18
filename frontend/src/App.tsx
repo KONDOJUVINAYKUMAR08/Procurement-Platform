@@ -23,13 +23,18 @@ import Reports from './modules/dashboard/Reports';
 import UserManagement from './modules/identity/UserManagement';
 import Settings from './modules/identity/Settings';
 import LoadingScreen from './components/common/LoadingScreen';
+import Copilot from './modules/ai/Copilot';
 import InvoiceIntelligence from './modules/ai/InvoiceIntelligence';
+import ContractIntelligence from './modules/ai/ContractIntelligence';
+import DocumentSearch from './modules/ai/DocumentSearch';
 
 // Role sets mirror the Sidebar visibility so direct-URL access matches the menu.
 const PROCUREMENT_ROLES = ['admin', 'procurement_manager', 'auditor'];
 const ORDER_ROLES = ['admin', 'procurement_manager', 'finance', 'auditor', 'vendor'];
 const INVOICE_ROLES = ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'];
 const AI_INVOICE_ROLES = ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'];
+const AI_BROAD_ROLES = ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'];
+const AI_CONTRACT_ROLES = ['admin', 'procurement_manager', 'finance', 'auditor'];
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -99,6 +104,9 @@ function AppRoutes() {
         } />
 
         {/* AI */}
+        <Route path="ai" element={<RoleRoute roles={AI_BROAD_ROLES}><Copilot /></RoleRoute>} />
+        <Route path="ai/search" element={<RoleRoute roles={AI_BROAD_ROLES}><DocumentSearch /></RoleRoute>} />
+        <Route path="ai/contracts" element={<RoleRoute roles={AI_CONTRACT_ROLES}><ContractIntelligence /></RoleRoute>} />
         <Route path="ai/invoices" element={<RoleRoute roles={AI_INVOICE_ROLES}><InvoiceIntelligence /></RoleRoute>} />
 
         {/* HR & Payroll — temporarily removed from scope; redirect any stale links */}
