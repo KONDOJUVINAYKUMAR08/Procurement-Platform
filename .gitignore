@@ -1,11 +1,23 @@
 node_modules
 dist
 .env
+.env.local
 logs
 *.log
 .DS_Store
 build
 coverage
+
+# SSH keys / secrets — never commit
+*.pem
+
+# Local debugging / audit artifacts
+scripts/shots/
+scripts/pw-invoice-check.js
+scripts/live-seed.py
+scripts/package.json
+scripts/package-lock.json
+PROCUREMENT_PLATFORM_AUDIT.md
 
 # Terraform — never commit these
 terraform.tfvars

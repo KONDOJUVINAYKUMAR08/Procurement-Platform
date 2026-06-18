@@ -71,7 +71,7 @@ const Invoices: React.FC = () => {
               : invoices.map((inv: any) => (
                 <tr key={inv._id} className="table-row">
                   <td className="px-6 py-4"><p className="text-sm font-mono font-medium text-white">{inv.invoiceNumber}</p><p className="text-xs text-neutral-500 truncate max-w-40">{inv.description}</p></td>
-                  <td className="px-6 py-4 text-sm text-neutral-400">{typeof inv.vendor === 'object' ? inv.vendor?.vendorName : inv.vendor}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-400">{inv.partyName || (typeof inv.vendor === 'object' ? inv.vendor?.vendorName : inv.vendor) || '—'}</td>
                   <td className="px-6 py-4"><p className="text-sm font-medium text-white">{formatCurrency(inv.totalAmount)}</p><p className="text-xs text-neutral-500">{formatCurrency(inv.amount)} + {formatCurrency(inv.tax)} tax</p></td>
                   <td className="px-6 py-4 text-sm text-neutral-500">{formatDate(inv.dueDate)}</td>
                   <td className="px-6 py-4"><span className={getStatusBadgeClass(inv.status)}>{inv.status}</span></td>

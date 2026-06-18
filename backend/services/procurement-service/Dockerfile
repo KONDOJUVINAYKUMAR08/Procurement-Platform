@@ -1,52 +1,41 @@
+# ── @procurement/procurement-service — standalone microservice image ──────────────────────────
+# Multi-stage, runs as a non-root user. Contains only the shared packages and
+# this service (no other services' code), per the true-microservices split.
+
 # Build stage
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Install deps using only the workspaces this service needs (shared + itself).
+COPY package.json package-lock.json tsconfig.base.json ./
 COPY backend/shared/types/package.json ./backend/shared/types/
 COPY backend/shared/common/package.json ./backend/shared/common/
 COPY backend/shared/middleware/package.json ./backend/shared/middleware/
 COPY backend/shared/utils/package.json ./backend/shared/utils/
-
 COPY backend/services/procurement-service/package.json ./backend/services/procurement-service/
-
-# Install dependencies
 RUN npm install
 
-# Copy source code for shared and this specific service
+# Build shared packages then this service.
 COPY backend/shared ./backend/shared
 COPY backend/services/procurement-service ./backend/services/procurement-service
-COPY tsconfig.base.json ./
-
-# Build shared packages and this service
-RUN npm run build:backend --workspace=@procurement/types --workspace=@procurement/common --workspace=@procurement/utils --workspace=@procurement/middleware --workspace=@procurement/procurement-service
+RUN npm run build -w @procurement/types  && npm run build -w @procurement/common  && npm run build -w @procurement/utils  && npm run build -w @procurement/middleware  && npm run build -w @procurement/procurement-service
 
 # Production stage
 FROM node:20-alpine
 
+# Non-root user.
+RUN addgroup -S app && adduser -S app -G app
+
 WORKDIR /app
-
-COPY package.json package-lock.json ./
-COPY --from=builder /app/backend/shared/types/dist ./backend/shared/types/dist
-COPY --from=builder /app/backend/shared/types/package.json ./backend/shared/types/
-
-COPY --from=builder /app/backend/shared/common/dist ./backend/shared/common/dist
-COPY --from=builder /app/backend/shared/common/package.json ./backend/shared/common/
-
-COPY --from=builder /app/backend/shared/middleware/dist ./backend/shared/middleware/dist
-COPY --from=builder /app/backend/shared/middleware/package.json ./backend/shared/middleware/
-
-COPY --from=builder /app/backend/shared/utils/dist ./backend/shared/utils/dist
-COPY --from=builder /app/backend/shared/utils/package.json ./backend/shared/utils/
-
-COPY --from=builder /app/backend/services/procurement-service/dist ./backend/services/procurement-service/dist
-COPY --from=builder /app/backend/services/procurement-service/package.json ./backend/services/procurement-service/
-
-RUN npm ci --omit=dev
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/backend/shared ./backend/shared
+COPY --from=builder /app/backend/services/procurement-service ./backend/services/procurement-service
 
 ENV NODE_ENV=production
+ENV PORT=5003
 EXPOSE 5003
+RUN mkdir -p logs && chown -R app:app /app
+USER app
 
 CMD ["node", "backend/services/procurement-service/dist/server.js"]

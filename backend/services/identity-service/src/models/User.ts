@@ -12,6 +12,7 @@ export interface UserDocument extends Item {
   role: UserRole;
   department: string;
   isActive: boolean;
+  vendorId?: string;
   mustChangePassword?: boolean;
   lastLogin?: Date;
   resetPasswordToken?: string;
@@ -46,6 +47,8 @@ const userSchema = new dynamoose.Schema(
     },
     department: { type: String, default: 'General' },
     isActive: { type: Boolean, default: true },
+    // Links a vendor-role login to a Procurement_Vendor._id for AI data scoping.
+    vendorId: { type: String },
     mustChangePassword: { type: Boolean, default: false },
     lastLogin: { type: Date },
     resetPasswordToken: { type: String },

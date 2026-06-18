@@ -13,6 +13,9 @@ export interface IUser {
   role: UserRole;
   department: string;
   isActive: boolean;
+  /** For role==='vendor' users: links the login to a specific Procurement_Vendor._id.
+   *  Used by the AI service to scope a vendor's data access to only their own records. */
+  vendorId?: string;
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -257,6 +260,11 @@ export interface AppConfig {
     region: string;
     s3Bucket: string;
     kmsKeyId: string;
+  };
+  bedrock: {
+    region: string;
+    textModelId: string;
+    embeddingModelId: string;
   };
   smtp: {
     host: string;

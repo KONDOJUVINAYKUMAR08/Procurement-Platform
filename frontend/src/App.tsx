@@ -23,10 +23,18 @@ import Reports from './modules/dashboard/Reports';
 import UserManagement from './modules/identity/UserManagement';
 import Settings from './modules/identity/Settings';
 import LoadingScreen from './components/common/LoadingScreen';
-import EmployeeDashboard from './modules/hr/EmployeeDashboard';
-import AttendancePage from './modules/hr/AttendancePage';
-import PayrollPage from './modules/hr/PayrollPage';
-import LettersPage from './modules/hr/LettersPage';
+import Copilot from './modules/ai/Copilot';
+import InvoiceIntelligence from './modules/ai/InvoiceIntelligence';
+import ContractIntelligence from './modules/ai/ContractIntelligence';
+import DocumentSearch from './modules/ai/DocumentSearch';
+
+// Role sets mirror the Sidebar visibility so direct-URL access matches the menu.
+const PROCUREMENT_ROLES = ['admin', 'procurement_manager', 'auditor'];
+const ORDER_ROLES = ['admin', 'procurement_manager', 'finance', 'auditor', 'vendor'];
+const INVOICE_ROLES = ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'];
+const AI_INVOICE_ROLES = ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'];
+const AI_BROAD_ROLES = ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'];
+const AI_CONTRACT_ROLES = ['admin', 'procurement_manager', 'finance', 'auditor'];
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,58 +83,40 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
 
         {/* Procurement */}
-        <Route path="vendors" element={<Vendors />} />
-        <Route path="vendors/:id" element={<VendorDetail />} />
-        <Route path="purchase-requests" element={<PurchaseRequests />} />
-        <Route path="purchase-orders" element={<PurchaseOrders />} />
-        <Route path="contracts" element={<Contracts />} />
+        <Route path="vendors" element={<RoleRoute roles={PROCUREMENT_ROLES}><Vendors /></RoleRoute>} />
+        <Route path="vendors/:id" element={<RoleRoute roles={PROCUREMENT_ROLES}><VendorDetail /></RoleRoute>} />
+        <Route path="purchase-requests" element={<RoleRoute roles={PROCUREMENT_ROLES}><PurchaseRequests /></RoleRoute>} />
+        <Route path="purchase-orders" element={<RoleRoute roles={ORDER_ROLES}><PurchaseOrders /></RoleRoute>} />
+        <Route path="contracts" element={<RoleRoute roles={ORDER_ROLES}><Contracts /></RoleRoute>} />
 
         {/* Finance */}
-        <Route path="invoice-dashboard" element={<InvoiceDashboard />} />
-        <Route path="invoices" element={<Invoices />} />
+        <Route path="invoice-dashboard" element={<RoleRoute roles={INVOICE_ROLES}><InvoiceDashboard /></RoleRoute>} />
+        <Route path="invoices" element={<RoleRoute roles={INVOICE_ROLES}><Invoices /></RoleRoute>} />
         <Route path="customers" element={
           <RoleRoute roles={['admin', 'finance']}>
             <Customers />
           </RoleRoute>
         } />
         <Route path="payments" element={
-          <RoleRoute roles={['admin', 'finance']}>
+          <RoleRoute roles={['admin', 'finance', 'auditor']}>
             <Payments />
           </RoleRoute>
         } />
 
-        {/* HR & Payroll */}
-        <Route path="hr/employees" element={
-          <AdminRoute>
-            <EmployeeDashboard />
-          </AdminRoute>
-        } />
-        <Route path="hr/attendance" element={
-          <RoleRoute roles={['admin', 'employee']}>
-            <AttendancePage />
-          </RoleRoute>
-        } />
-        <Route path="hr/payroll" element={
-          <RoleRoute roles={['admin', 'finance', 'employee']}>
-            <PayrollPage />
-          </RoleRoute>
-        } />
-        <Route path="hr/letters" element={
-          <RoleRoute roles={['admin', 'employee']}>
-            <LettersPage />
-          </RoleRoute>
-        } />
-        <Route path="hr/certificates" element={
-          <RoleRoute roles={['admin', 'employee']}>
-            <LettersPage />
-          </RoleRoute>
-        } />
+        {/* AI */}
+        <Route path="ai" element={<RoleRoute roles={AI_BROAD_ROLES}><Copilot /></RoleRoute>} />
+        <Route path="ai/search" element={<RoleRoute roles={AI_BROAD_ROLES}><DocumentSearch /></RoleRoute>} />
+        <Route path="ai/contracts" element={<RoleRoute roles={AI_CONTRACT_ROLES}><ContractIntelligence /></RoleRoute>} />
+        <Route path="ai/invoices" element={<RoleRoute roles={AI_INVOICE_ROLES}><InvoiceIntelligence /></RoleRoute>} />
+
+        {/* HR & Payroll — temporarily removed from scope; redirect any stale links */}
+        <Route path="hr/*" element={<Navigate to="/" replace />} />
 
         {/* Documents & System */}
         <Route path="documents" element={<Documents />} />
         <Route path="notifications" element={<Notifications />} />
-        <Route path="audit-logs" element={<AdminRoute><AuditLogs /></AdminRoute>} />
-        <Route path="reports" element={<Reports />} />
+        <Route path="audit-logs" element={<RoleRoute roles={['admin', 'auditor']}><AuditLogs /></RoleRoute>} />
+        <Route path="reports" element={<RoleRoute roles={['admin', 'procurement_manager', 'finance', 'auditor']}><Reports /></RoleRoute>} />
         <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
         <Route path="settings" element={<Settings />} />
       </Route>

@@ -134,8 +134,14 @@ export class InvoiceService {
     if (!invoice) throw new Error('Invoice not found');
     if (invoice.status === 'paid') throw new Error('Cannot update a paid invoice');
 
-    const computed = data.lineItems ? computeTotals({ ...invoice, ...data }) : {};
-    return await Invoice.update({ _id: id }, { ...data, ...computed });
+    // Unlike Invoice.create(), Invoice.update() does not auto-coerce date
+    // strings (e.g. from a date <input>) into Date instances, so do it here.
+    const normalized: Partial<InvoiceDocument> = { ...data };
+    if (normalized.issueDate) normalized.issueDate = new Date(normalized.issueDate as any);
+    if (normalized.dueDate) normalized.dueDate = new Date(normalized.dueDate as any);
+
+    const computed = normalized.lineItems ? computeTotals({ ...invoice, ...normalized }) : {};
+    return await Invoice.update({ _id: id }, { ...normalized, ...computed });
   }
 
   async delete(id: string) {

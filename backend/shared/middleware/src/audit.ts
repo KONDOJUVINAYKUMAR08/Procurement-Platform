@@ -1,6 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { IAuthenticatedRequest } from '@procurement/types';
 import { logger } from '@procurement/common';
+import { v4 as uuidv4 } from 'uuid';
+import { AuditLog } from './auditLog.model';
 
 export const createAuditLog = async (data: {
   userId: string;
@@ -12,12 +14,7 @@ export const createAuditLog = async (data: {
   userAgent: string;
 }) => {
   try {
-    const dynamoose = await import('dynamoose');
-    const AuditLogModel = dynamoose.model('Document_AuditLog');
-    await AuditLogModel.create({
-      ...data,
-      _id: require('uuid').v4()
-    });
+    await AuditLog.create({ ...data, _id: uuidv4() });
   } catch (err) {
     logger.error('Audit log creation failed:', err);
   }

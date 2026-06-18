@@ -20,16 +20,16 @@ import {
   CreditCard,
   ChevronDown,
   ChevronRight,
-  Briefcase,
-  Clock,
-  DollarSign,
-  FileSignature,
-  Award,
+  ScanSearch,
+  Sparkles,
+  FileSearch,
+  Search,
 } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  collapsed?: boolean;
 }
 
 interface NavItem {
@@ -40,7 +40,7 @@ interface NavItem {
   children?: NavItem[];
 }
 
-const NavItemComponent: React.FC<{ item: NavItem; onClose: () => void; depth?: number }> = ({ item, onClose, depth = 0 }) => {
+const NavItemComponent: React.FC<{ item: NavItem; onClose: () => void; depth?: number; collapsed?: boolean }> = ({ item, onClose, depth = 0, collapsed = false }) => {
   const location = useLocation();
   const [expanded, setExpanded] = useState(() =>
     item.children ? item.children.some(c => location.pathname.startsWith(c.path)) : false
@@ -53,17 +53,22 @@ const NavItemComponent: React.FC<{ item: NavItem; onClose: () => void; depth?: n
       <div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group
+          title={collapsed ? item.label : undefined}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${collapsed ? 'justify-center' : ''}
             ${expanded ? 'text-white bg-white/[0.04]' : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'}`}
-          style={{ paddingLeft: depth > 0 ? `${depth * 12 + 12}px` : undefined }}
+          style={{ paddingLeft: !collapsed && depth > 0 ? `${depth * 12 + 12}px` : undefined }}
         >
-          <span className={`${expanded ? 'text-white' : 'text-neutral-500 group-hover:text-white'} transition-colors`}>
+          <span className={`${expanded ? 'text-white' : 'text-neutral-500 group-hover:text-white'} transition-colors shrink-0`}>
             {item.icon}
           </span>
-          <span className="flex-1 text-left">{item.label}</span>
-          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">{item.label}</span>
+              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </>
+          )}
         </button>
-        {expanded && (
+        {expanded && !collapsed && (
           <div className="mt-1 space-y-1">
             {item.children!.map((child) => (
               <NavItemComponent key={child.path} item={child} onClose={onClose} depth={depth + 1} />
@@ -78,29 +83,34 @@ const NavItemComponent: React.FC<{ item: NavItem; onClose: () => void; depth?: n
     <NavLink
       to={item.path}
       onClick={onClose}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group
+      title={collapsed ? item.label : undefined}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${collapsed ? 'justify-center' : ''}
         ${isActive
           ? 'bg-white text-black'
           : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
         }`}
-      style={{ paddingLeft: depth > 0 ? `${depth * 12 + 12}px` : undefined }}
+      style={{ paddingLeft: !collapsed && depth > 0 ? `${depth * 12 + 12}px` : undefined }}
     >
-      <span className={`${isActive ? 'text-black' : 'text-neutral-500 group-hover:text-white'} transition-colors`}>
+      <span className={`${isActive ? 'text-black' : 'text-neutral-500 group-hover:text-white'} transition-colors shrink-0`}>
         {item.icon}
       </span>
-      {item.label}
+      {!collapsed && item.label}
     </NavLink>
   );
 };
 
-const NavGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+const NavGroup: React.FC<{ label: string; children: React.ReactNode; collapsed?: boolean }> = ({ label, children, collapsed }) => (
   <div className="mb-4">
-    <p className="px-3 mb-1 text-[10px] font-semibold tracking-widest text-neutral-600 uppercase">{label}</p>
+    {collapsed ? (
+      <div className="mx-3 mb-2 border-t border-white/[0.06]" />
+    ) : (
+      <p className="px-3 mb-1 text-[10px] font-semibold tracking-widest text-neutral-600 uppercase">{label}</p>
+    )}
     <div className="space-y-0.5">{children}</div>
   </div>
 );
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed = false }) => {
   const { user } = useAuth();
   const role = user?.role || '';
 
@@ -119,13 +129,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Payments', path: '/payments', icon: <CreditCard size={18} />, roles: ['admin', 'finance', 'auditor'] },
   ];
 
-  // ── HR Group ─────────────────────────────────────────────────────
-  const hrItems: NavItem[] = [
-    { label: 'Employees', path: '/hr/employees', icon: <Briefcase size={18} />, roles: ['admin'] },
-    { label: 'Attendance', path: '/hr/attendance', icon: <Clock size={18} />, roles: ['admin', 'employee'] },
-    { label: 'Payroll', path: '/hr/payroll', icon: <DollarSign size={18} />, roles: ['admin', 'finance', 'employee'] },
-    { label: 'Letters', path: '/hr/letters', icon: <FileSignature size={18} />, roles: ['admin', 'employee'] },
-    { label: 'Certificates', path: '/hr/certificates', icon: <Award size={18} />, roles: ['admin', 'employee'] },
+  // ── AI Group ─────────────────────────────────────────────────────
+  const aiItems: NavItem[] = [
+    { label: 'Copilot', path: '/ai', icon: <Sparkles size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
+    { label: 'Document Search', path: '/ai/search', icon: <Search size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'] },
+    { label: 'Contract Intelligence', path: '/ai/contracts', icon: <FileSearch size={18} />, roles: ['admin', 'procurement_manager', 'finance', 'auditor'] },
+    { label: 'Invoice Intelligence', path: '/ai/invoices', icon: <ScanSearch size={18} />, roles: ['admin', 'finance', 'procurement_manager', 'auditor', 'vendor'] },
   ];
 
   // ── System Group ─────────────────────────────────────────────────
@@ -142,59 +151,61 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const filteredProcurement = filter(procurementItems);
   const filteredFinance = filter(financeItems);
-  const filteredHR = filter(hrItems);
+  const filteredAi = filter(aiItems);
   const filteredSystem = filter(systemItems);
 
-  const SidebarContent = () => (
+  const SidebarContent: React.FC<{ collapsed?: boolean }> = ({ collapsed = false }) => (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-2 h-16 px-6 border-b border-white/[0.06] shrink-0">
-        <Hexagon size={24} className="text-white" />
-        <span className="text-lg font-bold tracking-tight">ProcureFlow</span>
+      <div className={`flex items-center gap-2 h-16 border-b border-white/[0.06] shrink-0 ${collapsed ? 'justify-center px-2' : 'px-6'}`}>
+        <Hexagon size={24} className="text-white shrink-0" />
+        {!collapsed && <span className="text-lg font-bold tracking-tight">ProcureFlow</span>}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-4 overflow-y-auto space-y-0">
+      <nav className="flex-1 p-4 overflow-y-auto overflow-x-hidden space-y-0">
         {/* Dashboard — always visible */}
         <div className="mb-4 space-y-0.5">
-          <NavItemComponent item={{ label: 'Dashboard', path: '/', icon: <LayoutDashboard size={18} /> }} onClose={onClose} />
+          <NavItemComponent item={{ label: 'Dashboard', path: '/', icon: <LayoutDashboard size={18} /> }} onClose={onClose} collapsed={collapsed} />
         </div>
 
         {filteredProcurement.length > 0 && (
-          <NavGroup label="Procurement">
-            {filteredProcurement.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} />)}
+          <NavGroup label="Procurement" collapsed={collapsed}>
+            {filteredProcurement.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} collapsed={collapsed} />)}
           </NavGroup>
         )}
 
         {filteredFinance.length > 0 && (
-          <NavGroup label="Finance">
-            {filteredFinance.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} />)}
+          <NavGroup label="Finance" collapsed={collapsed}>
+            {filteredFinance.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} collapsed={collapsed} />)}
           </NavGroup>
         )}
 
-        {filteredHR.length > 0 && (
-          <NavGroup label="HR & Payroll">
-            {filteredHR.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} />)}
+        {filteredAi.length > 0 && (
+          <NavGroup label="AI" collapsed={collapsed}>
+            {filteredAi.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} collapsed={collapsed} />)}
           </NavGroup>
         )}
 
         {filteredSystem.length > 0 && (
-          <NavGroup label="System">
-            {filteredSystem.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} />)}
+          <NavGroup label="System" collapsed={collapsed}>
+            {filteredSystem.map(item => <NavItemComponent key={item.path} item={item} onClose={onClose} collapsed={collapsed} />)}
           </NavGroup>
         )}
       </nav>
 
       {/* User info */}
       <div className="p-4 border-t border-white/[0.06] shrink-0">
-        <div className="flex items-center gap-3 px-3 py-2">
+        <div className={`flex items-center gap-3 px-3 py-2 ${collapsed ? 'justify-center px-0' : ''}`} title={collapsed ? `${user?.firstName} ${user?.lastName}` : undefined}>
           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white shrink-0">
             {user?.firstName?.[0]}{user?.lastName?.[0]}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
-            <p className="text-xs text-neutral-500 truncate capitalize">{user?.role?.replace(/_/g, ' ')}</p>
-          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-neutral-500 truncate capitalize">{user?.role?.replace(/_/g, ' ')}</p>
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -207,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={onClose} />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar — always full width with labels, regardless of desktop collapsed state */}
       <aside
         className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-white/[0.06] z-50 flex flex-col transform transition-transform duration-300 lg:hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -218,12 +229,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <X size={20} />
           </button>
         </div>
-        <SidebarContent />
+        <SidebarContent collapsed={false} />
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col bg-card border-r border-white/[0.06]">
-        <SidebarContent />
+      {/* Desktop sidebar — collapses to an icon rail */}
+      <aside className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:flex-col bg-card border-r border-white/[0.06] transition-[width] duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}>
+        <SidebarContent collapsed={collapsed} />
       </aside>
     </>
   );
