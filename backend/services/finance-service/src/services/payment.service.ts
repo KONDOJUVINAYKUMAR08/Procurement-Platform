@@ -35,11 +35,16 @@ export class PaymentService {
       throw new Error(`Cannot pay invoice in ${invoice.status} status. Must be approved first.`);
     }
 
+    const vendorId = (invoice as any).vendorId || invoice.vendor;
+    if (!vendorId) {
+      throw new Error('This invoice has no associated vendor and cannot be recorded as a vendor payment.');
+    }
+
     const payment = await Payment.create({
       _id: uuidv4(),
       paymentReference: generatePaymentReference(),
       invoice: invoice._id,
-      vendor: invoice.vendor,
+      vendor: vendorId,
       amount: invoice.totalAmount,
       paymentMethod: data.paymentMethod as any,
       notes: data.notes || '',

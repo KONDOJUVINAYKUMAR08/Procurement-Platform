@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoiceApi, vendorApi } from '../../services/endpoints';
+import { invoiceApi } from '../../services/endpoints';
 import { formatCurrency, getStatusBadgeClass, formatDate } from '../../lib/utils';
 import { Plus, Search, Receipt, CheckCircle, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import InvoiceForm from './InvoiceForm';
 
 const Invoices: React.FC = () => {
   const queryClient = useQueryClient();
@@ -10,19 +11,10 @@ const Invoices: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ vendor: '', amount: 0, tax: 0, dueDate: '', description: '', purchaseOrder: '', contract: '' });
 
   const { data, isLoading } = useQuery({
     queryKey: ['invoices', page, search, statusFilter],
     queryFn: () => invoiceApi.getAll({ page, limit: 10, search, status: statusFilter }),
-  });
-
-  const { data: vendorsData } = useQuery({ queryKey: ['vendors-list'], queryFn: () => vendorApi.getAll({ limit: 100 }) });
-  const vendors = Array.isArray(vendorsData?.items) ? vendorsData.items : [];
-
-  const createMutation = useMutation({
-    mutationFn: (data: any) => invoiceApi.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['invoices'] }); setShowCreate(false); },
   });
 
   const approveMutation = useMutation({
@@ -79,7 +71,7 @@ const Invoices: React.FC = () => {
               : invoices.map((inv: any) => (
                 <tr key={inv._id} className="table-row">
                   <td className="px-6 py-4"><p className="text-sm font-mono font-medium text-white">{inv.invoiceNumber}</p><p className="text-xs text-neutral-500 truncate max-w-40">{inv.description}</p></td>
-                  <td className="px-6 py-4 text-sm text-neutral-400">{typeof inv.vendor === 'object' ? inv.vendor?.vendorName : inv.vendor}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-400">{inv.partyName || (typeof inv.vendor === 'object' ? inv.vendor?.vendorName : inv.vendor) || '—'}</td>
                   <td className="px-6 py-4"><p className="text-sm font-medium text-white">{formatCurrency(inv.totalAmount)}</p><p className="text-xs text-neutral-500">{formatCurrency(inv.amount)} + {formatCurrency(inv.tax)} tax</p></td>
                   <td className="px-6 py-4 text-sm text-neutral-500">{formatDate(inv.dueDate)}</td>
                   <td className="px-6 py-4"><span className={getStatusBadgeClass(inv.status)}>{inv.status}</span></td>
@@ -106,29 +98,13 @@ const Invoices: React.FC = () => {
       </div>
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-card border border-white/[0.06] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-white/[0.06]"><h2 className="text-lg font-semibold">New Invoice</h2></div>
-            <form onSubmit={e => { e.preventDefault(); createMutation.mutate(form); }} className="p-6 space-y-4">
-              <div><label className="block text-sm text-neutral-300 mb-1">Vendor *</label>
-                <select required value={form.vendor} onChange={e => setForm({...form, vendor: e.target.value})} className="input-field">
-                  <option value="" className="bg-black">Select vendor</option>
-                  {vendors.map((v: any) => <option key={v._id} value={v._id} className="bg-black">{v.vendorName}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-neutral-300 mb-1">Amount *</label><input required type="number" value={form.amount} onChange={e => setForm({...form, amount: Number(e.target.value)})} className="input-field" /></div>
-                <div><label className="block text-sm text-neutral-300 mb-1">Tax</label><input type="number" value={form.tax} onChange={e => setForm({...form, tax: Number(e.target.value)})} className="input-field" /></div>
-              </div>
-              <div><label className="block text-sm text-neutral-300 mb-1">Due Date *</label><input required type="date" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} className="input-field" /></div>
-              <div><label className="block text-sm text-neutral-300 mb-1">Description</label><textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} className="input-field resize-none" /></div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" disabled={createMutation.isPending} className="btn-primary">{createMutation.isPending ? 'Creating...' : 'Create Invoice'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <InvoiceForm
+          onClose={() => setShowCreate(false)}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            setShowCreate(false);
+          }}
+        />
       )}
     </div>
   );

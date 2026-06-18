@@ -15,6 +15,7 @@ COPY backend/services/identity-service/package.json ./backend/services/identity-
 COPY backend/services/procurement-service/package.json ./backend/services/procurement-service/
 COPY backend/services/finance-service/package.json ./backend/services/finance-service/
 COPY backend/services/document-service/package.json ./backend/services/document-service/
+COPY backend/services/ai-service/package.json ./backend/services/ai-service/
 
 COPY backend/gateway/api-gateway/package.json ./backend/gateway/api-gateway/
 
@@ -37,6 +38,13 @@ RUN npx tsc backend/scripts/bootstrap-admin.ts --resolveJsonModule --esModuleInt
 
 # Production stage
 FROM node:20-alpine
+
+# Puppeteer (invoice/payslip/letter PDF generation) needs a real Chromium binary —
+# the bundled download it tries by default is a glibc build that won't run on
+# Alpine's musl libc, so install Alpine's own Chromium and point Puppeteer at it.
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 
@@ -64,6 +72,9 @@ COPY --from=builder /app/backend/services/finance-service/package.json ./backend
 
 COPY --from=builder /app/backend/services/document-service/dist ./backend/services/document-service/dist
 COPY --from=builder /app/backend/services/document-service/package.json ./backend/services/document-service/
+
+COPY --from=builder /app/backend/services/ai-service/dist ./backend/services/ai-service/dist
+COPY --from=builder /app/backend/services/ai-service/package.json ./backend/services/ai-service/
 
 COPY --from=builder /app/backend/gateway/api-gateway/dist ./backend/gateway/api-gateway/dist
 COPY --from=builder /app/backend/gateway/api-gateway/package.json ./backend/gateway/api-gateway/

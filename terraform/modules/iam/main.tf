@@ -115,6 +115,32 @@ resource "aws_iam_policy" "cloudwatch_policy" {
   })
 }
 
+resource "aws_iam_policy" "bedrock_policy" {
+  name        = "procurement-${var.environment}-bedrock-policy"
+  description = "Allow the EC2 instance to invoke the specific Bedrock foundation models used by the AI service"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ]
+      # Scoped to specific foundation-model ARNs (deliberately NOT Resource="*").
+      Resource = length(var.bedrock_model_arns) > 0 ? var.bedrock_model_arns : [
+        "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.nova-pro-v1:0",
+        "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.nova-2-multimodal-embeddings-v1:0",
+        "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.titan-embed-text-v2:0"
+      ]
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "bedrock_attach" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.bedrock_policy.arn
+}
+
 resource "aws_iam_role_policy_attachment" "ssm_core" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"

@@ -342,6 +342,57 @@ export const reportApi = {
   },
 };
 
+// ── AI API ──────────────────────────────────────────────────────────────────
+
+export const aiApi = {
+  // Procurement Copilot (stateless — client sends conversation history each turn)
+  chat: async (data: {
+    messages: { role: 'user' | 'assistant'; content: string }[];
+    structured?: boolean;
+  }): Promise<{ reply: string; structuredData?: any }> => {
+    const res = await api.post('/ai/chat', data);
+    return item<{ reply: string; structuredData?: any }>(res);
+  },
+  // Invoice Intelligence
+  analyzeInvoice: async (invoiceId: string): Promise<any> => {
+    const res = await api.post(`/ai/invoices/${invoiceId}/analyze`);
+    return item<any>(res);
+  },
+  getInvoiceAnalysis: async (invoiceId: string): Promise<any> => {
+    const res = await api.get(`/ai/invoices/${invoiceId}`);
+    return item<any>(res);
+  },
+  // Contract Intelligence
+  analyzeContract: async (documentId: string): Promise<any> => {
+    const res = await api.post(`/ai/contracts/${documentId}/analyze`);
+    return item<any>(res);
+  },
+  getContractAnalysis: async (documentId: string): Promise<any> => {
+    const res = await api.get(`/ai/contracts/${documentId}`);
+    return item<any>(res);
+  },
+  // Document Search (RAG)
+  search: async (data: { query: string; category?: string; topK?: number }): Promise<{ answer: string; sources: any[] }> => {
+    const res = await api.post('/ai/search', data);
+    return item<{ answer: string; sources: any[] }>(res);
+  },
+  indexDocument: async (documentId: string): Promise<{ documentId: string; chunksIndexed: number }> => {
+    const res = await api.post(`/ai/search/index/${documentId}`);
+    return item<{ documentId: string; chunksIndexed: number }>(res);
+  },
+  // Feedback (quality tracking)
+  sendFeedback: async (data: {
+    feature: 'chat' | 'contract' | 'search' | 'invoice';
+    referenceId?: string;
+    rating: 'up' | 'down';
+    comment?: string;
+    context?: Record<string, unknown>;
+  }): Promise<any> => {
+    const res = await api.post('/ai/feedback', data);
+    return item<any>(res);
+  },
+};
+
 // ── HR API ────────────────────────────────────────────────────────────────────
 
 export const hrApi = {

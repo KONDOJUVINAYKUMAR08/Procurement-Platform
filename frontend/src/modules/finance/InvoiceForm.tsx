@@ -176,8 +176,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onClose, onSaved }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <div className="bg-[#0d0d14] border border-white/[0.08] rounded-2xl w-full max-w-5xl my-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[#0d0d14] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
           <div>
@@ -285,7 +285,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onClose, onSaved }) 
                     <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 min-w-[200px]">Description *</th>
                     <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-24">HSN/SAC</th>
                     <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-16">Qty *</th>
-                    <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-16">Unit</th>
+                    <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-24">Unit</th>
                     <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-24">Rate *</th>
                     <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-16">Disc%</th>
                     <th className="text-left text-xs font-semibold text-neutral-500 pb-2 pr-2 w-20">GST%</th>
