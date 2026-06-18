@@ -35,6 +35,7 @@ COPY --from=builder /app/backend/services/ai-service ./backend/services/ai-servi
 ENV NODE_ENV=production
 ENV PORT=5006
 EXPOSE 5006
+RUN mkdir -p logs && chown -R app:app /app
 USER app
 
 CMD ["node", "backend/services/ai-service/dist/server.js"]

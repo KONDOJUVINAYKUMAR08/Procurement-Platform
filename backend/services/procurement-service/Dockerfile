@@ -35,6 +35,7 @@ COPY --from=builder /app/backend/services/procurement-service ./backend/services
 ENV NODE_ENV=production
 ENV PORT=5003
 EXPOSE 5003
+RUN mkdir -p logs && chown -R app:app /app
 USER app
 
 CMD ["node", "backend/services/procurement-service/dist/server.js"]

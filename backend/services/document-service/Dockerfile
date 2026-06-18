@@ -35,6 +35,7 @@ COPY --from=builder /app/backend/services/document-service ./backend/services/do
 ENV NODE_ENV=production
 ENV PORT=5004
 EXPOSE 5004
+RUN mkdir -p logs && chown -R app:app /app
 USER app
 
 CMD ["node", "backend/services/document-service/dist/server.js"]

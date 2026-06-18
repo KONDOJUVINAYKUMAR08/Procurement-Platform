@@ -40,6 +40,7 @@ COPY --from=builder /app/backend/services/identity-service ./backend/services/id
 ENV NODE_ENV=production
 ENV PORT=5001
 EXPOSE 5001
+RUN mkdir -p logs && chown -R app:app /app
 USER app
 
 CMD ["node", "backend/services/identity-service/dist/server.js"]

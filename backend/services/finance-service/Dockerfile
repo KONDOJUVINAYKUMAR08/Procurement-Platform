@@ -40,6 +40,7 @@ COPY --from=builder /app/backend/services/finance-service ./backend/services/fin
 ENV NODE_ENV=production
 ENV PORT=5002
 EXPOSE 5002
+RUN mkdir -p logs && chown -R app:app /app
 USER app
 
 CMD ["node", "backend/services/finance-service/dist/server.js"]
