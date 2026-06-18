@@ -1,8 +1,0 @@
-aws_region      = "us-east-1"
-s3_bucket_name  = "procurement-dev-documents-08"
-frontend_ami_id = "ami-0a149d868c070e6a8"
-backend_ami_id  = "ami-00a138763f5f1e0e9"
-domain_name     = "rxpulse.online"
-subdomain       = "procurement"
-sender_email    = "kondojuvinaykumar2004@gmail.com"
-recipient_email = "vinaykumarkondoju08@gmail.com"

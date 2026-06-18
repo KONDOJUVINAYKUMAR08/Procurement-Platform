@@ -1,1 +1,0 @@
-{"filename": "builds\\49a1899001a062aab40e7c1d142c7ff5b8b2ff5f3cc0d355ac2e299dbb967287.zip", "runtime": "nodejs18.x", "artifacts_dir": "builds", "build_plan": [[["zip", "../../modules/monitoring/lambda", null]]]}
