@@ -19,7 +19,7 @@ module "irsa" {
 }
 
 resource "aws_iam_policy" "irsa_policy" {
-  for_each = toset(var.services)
+  for_each    = toset(var.services)
   name        = "${var.environment}-${each.value}-policy"
   description = "IRSA policy for ${each.value}"
 
@@ -51,7 +51,7 @@ resource "aws_iam_policy" "irsa_policy" {
           "s3:PutObject",
           "s3:ListBucket"
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
           var.s3_bucket_arn,
           "${var.s3_bucket_arn}/*"

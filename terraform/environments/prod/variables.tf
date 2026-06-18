@@ -1,0 +1,16 @@
+variable "aws_region" { type = string }
+variable "vpc_cidr" { type = string }
+variable "azs" { type = list(string) }
+variable "private_subnets" { type = list(string) }
+variable "public_subnets" { type = list(string) }
+variable "node_min_size" { type = number }
+variable "node_max_size" { type = number }
+variable "node_desired_size" { type = number }
+variable "node_instance_types" { type = list(string) }
+variable "s3_bucket_name" { type = string }
+variable "app_hostname" { type = string }
+variable "bedrock_text_model_id" { type = string }
+variable "bedrock_embedding_model_id" { type = string }
+variable "sns_sender_email" { type = string }
+variable "sns_recipient_email" { type = string }
+variable "tags" { type = map(string) }

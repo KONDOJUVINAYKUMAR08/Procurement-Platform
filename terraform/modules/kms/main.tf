@@ -1,7 +1,7 @@
 resource "aws_kms_key" "key" {
-  description             = "KMS key for ${var.environment}"
-  enable_key_rotation     = true
-  tags                    = var.tags
+  description         = "KMS key for ${var.environment}"
+  enable_key_rotation = true
+  tags                = var.tags
 }
 
 resource "aws_kms_alias" "alias" {

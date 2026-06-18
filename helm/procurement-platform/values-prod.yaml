@@ -1,0 +1,38 @@
+global:
+  environment: prod
+  domain: procurement.rxpulse.online
+  awsRegion: us-east-1
+  s3Bucket: procurement-documents-prod-08
+  kmsKeyId: ""
+  acmCertArn: ""
+  wafAclArn: ""
+
+identity-service:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 10
+
+procurement-service:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 10
+
+finance-service:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 10
+
+document-service:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 10
+
+ai-service:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 10
+
+frontend:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 10

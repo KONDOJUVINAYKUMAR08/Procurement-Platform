@@ -1,0 +1,208 @@
+name: CD (GitOps Deploy)
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build-and-push-ecr:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.vars.outputs.sha_short }}
+    strategy:
+      matrix:
+        include:
+          - service: identity-service
+            dockerfile: backend/services/identity-service/Dockerfile
+            context: .
+            repo: procurement-identity
+          - service: finance-service
+            dockerfile: backend/services/finance-service/Dockerfile
+            context: .
+            repo: procurement-finance
+          - service: procurement-service
+            dockerfile: backend/services/procurement-service/Dockerfile
+            context: .
+            repo: procurement-procurement
+          - service: document-service
+            dockerfile: backend/services/document-service/Dockerfile
+            context: .
+            repo: procurement-document
+          - service: ai-service
+            dockerfile: backend/services/ai-service/Dockerfile
+            context: .
+            repo: procurement-ai
+          - service: frontend
+            dockerfile: frontend/Dockerfile
+            context: frontend
+            repo: procurement-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Image Tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push ${{ matrix.service }}
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          TAG: ${{ steps.vars.outputs.sha_short }}
+        run: |
+          docker build -f ${{ matrix.dockerfile }} -t $REGISTRY/${{ matrix.repo }}:$TAG -t $REGISTRY/${{ matrix.repo }}:latest ${{ matrix.context }}
+          docker push $REGISTRY/${{ matrix.repo }}:$TAG
+          docker push $REGISTRY/${{ matrix.repo }}:latest
+
+  infra-shared:
+    needs: build-and-push-ecr
+    runs-on: ubuntu-latest
+    outputs:
+      acm_cert_arn: ${{ steps.outputs.outputs.acm_cert_arn }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Apply (shared)
+        working-directory: terraform/environments/shared
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Capture outputs
+        id: outputs
+        working-directory: terraform/environments/shared
+        run: echo "acm_cert_arn=$(terraform output -raw acm_certificate_arn)" >> $GITHUB_OUTPUT
+
+  infra-and-deploy-dev:
+    needs: [build-and-push-ecr, infra-shared]
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      irsa_arns: ${{ steps.outputs.outputs.irsa_arns }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITOPS_PAT }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Apply (dev)
+        working-directory: terraform/environments/dev
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Capture outputs
+        id: outputs
+        working-directory: terraform/environments/dev
+        run: echo "irsa_arns=$(terraform output -json irsa_role_arns | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Update Helm values for dev
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push-ecr.outputs.image_tag }}
+          ACM_ARN: ${{ needs.infra-shared.outputs.acm_cert_arn }}
+          IRSA_ARNS_JSON: ${{ steps.outputs.outputs.irsa_arns }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          VALUES=helm/procurement-platform/values-dev.yaml
+          yq -i ".global.acmCertArn = \"$ACM_ARN\"" "$VALUES"
+          declare -A REPO=( [identity-service]=procurement-identity [finance-service]=procurement-finance [procurement-service]=procurement-procurement [document-service]=procurement-document [ai-service]=procurement-ai [frontend]=procurement-frontend )
+          for chart in "${!REPO[@]}"; do
+            irsa_arn=$(echo "$IRSA_ARNS_JSON" | jq -r --arg c "$chart" '.[$c] // ""')
+            yq -i ".[\"$chart\"].image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
+            yq -i ".[\"$chart\"].image.tag = \"$IMAGE_TAG\"" "$VALUES"
+            if [ -n "$irsa_arn" ]; then
+              yq -i ".[\"$chart\"].serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
+            fi
+          done
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add "$VALUES"
+          git commit -m "Update dev image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git push
+
+  infra-and-deploy-prod:
+    needs: [build-and-push-ecr, infra-shared, infra-and-deploy-dev]
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITOPS_PAT }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Apply (prod)
+        working-directory: terraform/environments/prod
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Capture outputs
+        id: outputs
+        working-directory: terraform/environments/prod
+        run: echo "irsa_arns=$(terraform output -json irsa_role_arns | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Update Helm values for prod
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push-ecr.outputs.image_tag }}
+          ACM_ARN: ${{ needs.infra-shared.outputs.acm_cert_arn }}
+          IRSA_ARNS_JSON: ${{ steps.outputs.outputs.irsa_arns }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          VALUES=helm/procurement-platform/values-prod.yaml
+          yq -i ".global.acmCertArn = \"$ACM_ARN\"" "$VALUES"
+          declare -A REPO=( [identity-service]=procurement-identity [finance-service]=procurement-finance [procurement-service]=procurement-procurement [document-service]=procurement-document [ai-service]=procurement-ai [frontend]=procurement-frontend )
+          for chart in "${!REPO[@]}"; do
+            irsa_arn=$(echo "$IRSA_ARNS_JSON" | jq -r --arg c "$chart" '.[$c] // ""')
+            yq -i ".[\"$chart\"].image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
+            yq -i ".[\"$chart\"].image.tag = \"$IMAGE_TAG\"" "$VALUES"
+            if [ -n "$irsa_arn" ]; then
+              yq -i ".[\"$chart\"].serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
+            fi
+          done
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add "$VALUES"
+          git commit -m "Update prod image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git push
