@@ -40,10 +40,17 @@ resource "aws_iam_policy" "irsa_policy" {
           "dynamodb:GetItem",
           "dynamodb:Scan",
           "dynamodb:Query",
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable",
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem"
         ]
-        Effect   = "Allow"
-        Resource = [for t in var.dynamodb_tables : "arn:aws:dynamodb:*:*:table/${t}"]
+        Effect = "Allow"
+        Resource = concat(
+          [for t in var.dynamodb_tables : "arn:aws:dynamodb:*:*:table/${t}"],
+          [for t in var.dynamodb_tables : "arn:aws:dynamodb:*:*:table/${t}/index/*"]
+        )
       },
       {
         Action = [
