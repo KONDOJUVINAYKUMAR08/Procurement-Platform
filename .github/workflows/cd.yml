@@ -171,7 +171,7 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add "$VALUES"
-          git commit -m "chore: update dev image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git commit -m "chore: update dev image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
           git push
 
   infra-and-deploy-prod:
@@ -243,5 +243,5 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add "$VALUES"
-          git commit -m "chore: update prod image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git commit -m "chore: update prod image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
           git push
