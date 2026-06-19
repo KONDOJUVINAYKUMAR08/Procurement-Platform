@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/KONDOJUVINAYKUMAR08/Procurement-Platform.git
-    targetRevision: HEAD
+    targetRevision: feature/microservices-cognito
     path: gitops/applications/environments
     directory:
       recurse: true
