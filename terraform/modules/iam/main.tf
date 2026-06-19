@@ -1,177 +1,70 @@
-resource "aws_iam_role" "ec2_role" {
-  name = "procurement-${var.environment}-ec2-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "sts:AssumeRole"
-      Effect    = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
-  })
-  tags = {
-    Name        = "procurement-${var.environment}-ec2-role"
-    Environment = var.environment
+module "irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.0"
+
+  for_each = toset(var.services)
+
+  role_name = "${var.environment}-${each.value}-irsa"
+
+  oidc_providers = {
+    ex = {
+      provider_arn               = var.oidc_provider_arn
+      namespace_service_accounts = ["procurement-${var.environment}:${each.value}"]
+    }
+  }
+
+  role_policy_arns = {
+    policy = aws_iam_policy.irsa_policy[each.key].arn
   }
 }
 
-resource "aws_iam_policy" "dynamodb_policy" {
-  name        = "procurement-${var.environment}-dynamodb-policy"
-  description = "Allow EC2 instances to access all DynamoDB tables for procurement platform"
+resource "aws_iam_policy" "irsa_policy" {
+  for_each    = toset(var.services)
+  name        = "${var.environment}-${each.value}-policy"
+  description = "IRSA policy for ${each.value}"
+
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "dynamodb:PutItem",
-        "dynamodb:GetItem",
-        "dynamodb:Scan",
-        "dynamodb:Query",
-        "dynamodb:UpdateItem",
-        "dynamodb:DeleteItem",
-        "dynamodb:DescribeTable",
-        "dynamodb:BatchGetItem",
-        "dynamodb:BatchWriteItem",
-        "dynamodb:CreateTable",
-        "dynamodb:ListTables"
-      ]
-      Resource = "*"
-    }]
+    Statement = [
+      {
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Effect   = "Allow"
+        Resource = [for arn in var.secret_arns : arn]
+      },
+      {
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:UpdateItem"
+        ]
+        Effect   = "Allow"
+        Resource = [for t in var.dynamodb_tables : "arn:aws:dynamodb:*:*:table/${t}"]
+      },
+      {
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Effect = "Allow"
+        Resource = [
+          var.s3_bucket_arn,
+          "${var.s3_bucket_arn}/*"
+        ]
+      },
+      {
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Effect   = "Allow"
+        Resource = [var.kms_key_arn]
+      }
+    ]
   })
-}
-
-resource "aws_iam_policy" "s3_policy" {
-  name        = "procurement-${var.environment}-s3-policy"
-  description = "Allow EC2 instances to read/write procurement documents in S3"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject",
-        "s3:GetObjectVersion",
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ]
-      Resource = [
-        "arn:aws:s3:::${var.s3_bucket_name}",
-        "arn:aws:s3:::${var.s3_bucket_name}/*"
-      ]
-    }]
-  })
-}
-
-resource "aws_iam_policy" "kms_policy" {
-  name        = "procurement-${var.environment}-kms-policy"
-  description = "Allow EC2 instances to use the KMS key for encryption/decryption"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "kms:GenerateDataKey",
-        "kms:Decrypt",
-        "kms:Encrypt",
-        "kms:DescribeKey",
-        "kms:ReEncrypt*"
-      ]
-      Resource = var.kms_key_arn != "" ? [var.kms_key_arn] : ["*"]
-    }]
-  })
-}
-
-resource "aws_iam_policy" "secrets_policy" {
-  name        = "procurement-${var.environment}-secrets-policy"
-  description = "Allow EC2 instances to read application secrets from Secrets Manager"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:DescribeSecret"
-      ]
-      Resource = "arn:aws:secretsmanager:*:*:secret:procurement/${var.environment}/*"
-    }]
-  })
-}
-
-resource "aws_iam_policy" "cloudwatch_policy" {
-  name        = "procurement-${var.environment}-cloudwatch-policy"
-  description = "Allow EC2 instances to push logs to CloudWatch"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-        "logs:DescribeLogStreams"
-      ]
-      Resource = "arn:aws:logs:*:*:*"
-    }]
-  })
-}
-
-resource "aws_iam_policy" "bedrock_policy" {
-  name        = "procurement-${var.environment}-bedrock-policy"
-  description = "Allow the EC2 instance to invoke the specific Bedrock foundation models used by the AI service"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
-      ]
-      # Scoped to specific foundation-model ARNs (deliberately NOT Resource="*").
-      Resource = length(var.bedrock_model_arns) > 0 ? var.bedrock_model_arns : [
-        "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.nova-pro-v1:0",
-        "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.nova-2-multimodal-embeddings-v1:0",
-        "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.titan-embed-text-v2:0"
-      ]
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "bedrock_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.bedrock_policy.arn
-}
-
-resource "aws_iam_role_policy_attachment" "ssm_core" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_role_policy_attachment" "dynamodb_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.dynamodb_policy.arn
-}
-
-resource "aws_iam_role_policy_attachment" "s3_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.s3_policy.arn
-}
-
-resource "aws_iam_role_policy_attachment" "kms_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.kms_policy.arn
-}
-
-resource "aws_iam_role_policy_attachment" "secrets_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.secrets_policy.arn
-}
-
-resource "aws_iam_role_policy_attachment" "cloudwatch_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.cloudwatch_policy.arn
-}
-
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "procurement-${var.environment}-ec2-profile"
-  role = aws_iam_role.ec2_role.name
 }

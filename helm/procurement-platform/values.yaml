@@ -1,0 +1,10 @@
+global:
+  environment: base
+  domain: ""
+  awsRegion: us-east-1
+  s3Bucket: ""
+  kmsKeyId: ""
+  # acmCertArn / wafAclArn are injected by CI/CD from Terraform's shared/dev/prod
+  # outputs at deploy time — never hand-typed.
+  acmCertArn: ""
+  wafAclArn: ""

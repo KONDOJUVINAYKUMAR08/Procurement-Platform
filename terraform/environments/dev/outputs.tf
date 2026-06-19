@@ -1,47 +1,16 @@
-output "public_alb_dns" {
-  value = module.public_alb.alb_dns_name
-}
-
-output "internal_alb_dns" {
-  value = module.internal_alb.alb_dns_name
-}
-
-output "kms_key_arn" {
-  value = module.kms.key_arn
-}
-
-output "s3_bucket_name" {
-  value = module.s3.bucket_name
-}
-
-output "secret_name" {
-  value = module.secretsmanager.secret_name
-}
-
-output "fqdn" {
-  value = module.route53.fqdn
-}
-
-output "route53_zone_id" {
-  value = module.route53.zone_id
-}
-
-output "route53_nameservers" {
-  value = module.route53.name_servers
-}
-
-output "certificate_arn" {
-  value = module.acm.certificate_arn
-}
-
-output "frontend_asg_name" {
-  value = module.frontend_asg.asg_name
-}
-
-output "backend_asg_name" {
-  value = module.backend_asg.asg_name
-}
-
-output "sns_topic_arn" {
-  value = module.sns.topic_arn
-}
+output "eks_cluster_name" { value = module.eks.cluster_name }
+output "eks_cluster_endpoint" { value = module.eks.cluster_endpoint }
+output "eks_oidc_provider_arn" { value = module.eks.oidc_provider_arn }
+output "eks_lbc_role_arn" { value = module.eks.lbc_role_arn }
+output "vpc_id" { value = module.vpc.vpc_id }
+output "cognito_user_pool_id" { value = module.cognito.user_pool_id }
+output "cognito_user_pool_arn" { value = module.cognito.user_pool_arn }
+output "cognito_client_id" { value = module.cognito.client_id }
+output "secret_arns" { value = module.secrets_manager.secret_arns }
+output "irsa_role_arns" { value = module.iam_irsa.irsa_role_arns }
+output "dynamodb_table_names" { value = module.dynamodb.table_names }
+output "s3_bucket_name" { value = module.s3.bucket_name }
+output "s3_bucket_arn" { value = module.s3.bucket_arn }
+output "kms_key_arn" { value = module.kms.key_arn }
+output "waf_web_acl_arn" { value = module.waf.web_acl_arn }
+output "sns_topic_arn" { value = module.sns.topic_arn }

@@ -20,7 +20,6 @@ scripts/package-lock.json
 PROCUREMENT_PLATFORM_AUDIT.md
 
 # Terraform — never commit these
-terraform.tfvars
 *.tfstate
 *.tfstate.backup
 .terraform/

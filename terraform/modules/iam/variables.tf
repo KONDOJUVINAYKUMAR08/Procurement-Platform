@@ -1,19 +1,10 @@
-variable "environment" {
-  type = string
-}
-variable "s3_bucket_name" {
-  type = string
-}
-variable "kms_key_arn" {
-  type    = string
-  default = ""
-}
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
-}
-variable "bedrock_model_arns" {
-  description = "Bedrock foundation-model ARNs the AI service is allowed to invoke. Defaults to the Nova Pro text model and the Nova multimodal embedding model in the given region."
-  type        = list(string)
-  default     = []
-}
+variable "environment" { type = string }
+variable "services" { type = list(string) }
+variable "oidc_provider_arn" { type = string }
+variable "secret_arns" { type = list(string) }
+variable "dynamodb_tables" { type = list(string) }
+variable "s3_bucket_arn" { type = string }
+variable "kms_key_arn" { type = string }
+variable "aws_region" { type = string }
+variable "bedrock_text_model_id" { type = string }
+variable "bedrock_embedding_model_id" { type = string }

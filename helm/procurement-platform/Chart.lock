@@ -1,0 +1,21 @@
+dependencies:
+- name: frontend
+  repository: file://charts/frontend
+  version: 0.1.0
+- name: identity-service
+  repository: file://charts/identity-service
+  version: 0.1.0
+- name: procurement-service
+  repository: file://charts/procurement-service
+  version: 0.1.0
+- name: finance-service
+  repository: file://charts/finance-service
+  version: 0.1.0
+- name: document-service
+  repository: file://charts/document-service
+  version: 0.1.0
+- name: ai-service
+  repository: file://charts/ai-service
+  version: 0.1.0
+digest: sha256:577a92ab66ca69b2f0d7203364de621229df2239b2026510246d835edef54834
+generated: "2026-06-19T00:11:21.1161959+05:30"

@@ -1,0 +1,149 @@
+name: CD Dev (Build + Deploy)
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build-and-push-ecr:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.vars.outputs.sha_short }}
+    strategy:
+      matrix:
+        include:
+          - service: identity-service
+            dockerfile: backend/services/identity-service/Dockerfile
+            context: .
+            repo: procurement-identity
+          - service: finance-service
+            dockerfile: backend/services/finance-service/Dockerfile
+            context: .
+            repo: procurement-finance
+          - service: procurement-service
+            dockerfile: backend/services/procurement-service/Dockerfile
+            context: .
+            repo: procurement-procurement
+          - service: document-service
+            dockerfile: backend/services/document-service/Dockerfile
+            context: .
+            repo: procurement-document
+          - service: ai-service
+            dockerfile: backend/services/ai-service/Dockerfile
+            context: .
+            repo: procurement-ai
+          - service: frontend
+            dockerfile: frontend/Dockerfile
+            context: frontend
+            repo: procurement-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Image Tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push ${{ matrix.service }}
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          TAG: ${{ steps.vars.outputs.sha_short }}
+        run: |
+          docker build -f ${{ matrix.dockerfile }} -t $REGISTRY/${{ matrix.repo }}:$TAG -t $REGISTRY/${{ matrix.repo }}:latest ${{ matrix.context }}
+          docker push $REGISTRY/${{ matrix.repo }}:$TAG
+          docker push $REGISTRY/${{ matrix.repo }}:latest
+
+  deploy-dev:
+    needs: build-and-push-ecr
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITOPS_PAT }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      # Read-only: dev infrastructure must already exist. Apply it first via
+      # the separate "Terraform Apply" workflow (environment: dev). This job
+      # never runs terraform apply itself.
+      - name: Read dev Terraform outputs
+        id: tf-outputs
+        working-directory: terraform/environments/dev
+        run: |
+          terraform init
+          echo "irsa_arns=$(terraform output -json irsa_role_arns | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Read shared Terraform outputs
+        id: tf-shared
+        working-directory: terraform/environments/shared
+        run: |
+          terraform init
+          echo "acm_cert_arn=$(terraform output -raw acm_certificate_arn)" >> $GITHUB_OUTPUT
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update Helm values for dev
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push-ecr.outputs.image_tag }}
+          ACM_ARN: ${{ steps.tf-shared.outputs.acm_cert_arn }}
+          IRSA_ARNS_JSON: ${{ steps.tf-outputs.outputs.irsa_arns }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          VALUES=helm/procurement-platform/values-dev.yaml
+
+          yq -i ".global.acmCertArn = \"$ACM_ARN\"" "$VALUES"
+
+          declare -A REPO=(
+            [identity-service]=procurement-identity
+            [finance-service]=procurement-finance
+            [procurement-service]=procurement-procurement
+            [document-service]=procurement-document
+            [ai-service]=procurement-ai
+            [frontend]=procurement-frontend
+          )
+
+          for chart in "${!REPO[@]}"; do
+            irsa_arn=$(echo "$IRSA_ARNS_JSON" | jq -r --arg c "$chart" '.[$c] // ""')
+            yq -i ".\"$chart\".image.repository = \"$REGISTRY/${REPO[$chart]}\"" "$VALUES"
+            yq -i ".\"$chart\".image.tag = \"$IMAGE_TAG\"" "$VALUES"
+            if [ -n "$irsa_arn" ]; then
+              yq -i ".\"$chart\".serviceAccount.annotations.\"eks.amazonaws.com/role-arn\" = \"$irsa_arn\"" "$VALUES"
+            fi
+          done
+
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add "$VALUES"
+          git commit -m "chore: update dev image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
+          git push
