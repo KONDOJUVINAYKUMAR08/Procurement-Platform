@@ -56,6 +56,16 @@ export const connectDatabase = async (): Promise<void> => {
       region: config.aws.region,
     });
     dynamoose.aws.ddb.set(ddb);
+
+    // Terraform creates tables as "{environment}-{ModelName}" (e.g. dev-Identity_User)
+    // to keep dev/prod isolated within the same AWS account. Models call
+    // dynamoose.model('Identity_User', ...) with no prefix, so this must be set
+    // before any model file is imported (server.ts dynamically imports routes
+    // only after connectDatabase() resolves, which is what makes this safe here).
+    const tablePrefix = process.env.DYNAMODB_TABLE_PREFIX || '';
+    if (tablePrefix) {
+      dynamoose.Table.defaults.set({ prefix: tablePrefix });
+    }
     console.log(`=== DYNAMODB: Connected directly to AWS DynamoDB (Region: ${config.aws.region}) ===`);
     console.log('======================================');
   } catch (error) {

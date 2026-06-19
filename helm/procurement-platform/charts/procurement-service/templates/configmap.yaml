@@ -8,6 +8,7 @@ data:
   PORT: {{ .Values.service.targetPort | quote }}
   AWS_REGION: {{ .Values.global.awsRegion | quote }}
   AWS_SECRET_NAME: "procurement/{{ .Values.global.environment }}/{{ .Chart.Name }}"
+  DYNAMODB_TABLE_PREFIX: "{{ .Values.global.environment }}-"
   AWS_S3_BUCKET: {{ .Values.global.s3Bucket | quote }}
   AWS_KMS_KEY_ID: {{ .Values.global.kmsKeyId | quote }}
   CORS_ORIGIN: {{ printf "https://%s" .Values.global.domain | quote }}
