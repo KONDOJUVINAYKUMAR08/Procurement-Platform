@@ -2,7 +2,7 @@ name: CD (GitOps Deploy)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/microservices-cognito ]
   workflow_dispatch:   # allows manual run from any branch via GitHub Actions UI
 
 permissions:
