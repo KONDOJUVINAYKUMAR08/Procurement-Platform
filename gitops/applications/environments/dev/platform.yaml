@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/KONDOJUVINAYKUMAR08/Procurement-Platform.git
-    targetRevision: feature/microservices-cognito
+    targetRevision: develop
     path: helm/procurement-platform
     helm:
       valueFiles:
