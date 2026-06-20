@@ -17,6 +17,10 @@ resource "aws_ecr_repository" "repo" {
   name                 = "procurement-${local.repo_short_name[each.value]}"
   image_tag_mutability = "MUTABLE"
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   image_scanning_configuration {
     scan_on_push = true
   }
