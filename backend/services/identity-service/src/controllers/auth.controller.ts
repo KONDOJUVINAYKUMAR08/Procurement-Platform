@@ -74,6 +74,19 @@ export class AuthController {
     }
   }
 
+  async changePassword(req: IAuthenticatedRequest, res: Response) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return sendError(res, 'Current and new password are required', 400);
+      }
+      await authService.changePassword(req.user!.userId, currentPassword, newPassword);
+      return sendSuccess(res, null, 'Password updated successfully');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
+    }
+  }
+
   async logout(_req: Request, res: Response) {
     res.clearCookie('token');
     return sendSuccess(res, null, 'Logged out successfully');

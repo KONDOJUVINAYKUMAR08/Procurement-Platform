@@ -5,8 +5,12 @@ AWS.config.update({
   region: config.aws.region,
 });
 
-export const s3 = new AWS.S3();
+// signatureVersion 'v4' is REQUIRED for presigned URLs of KMS-encrypted (SSE-KMS)
+// objects — without it, S3 returns "Requests specifying Server Side Encryption
+// with AWS KMS managed keys require AWS Signature Version 4." on download.
+export const s3 = new AWS.S3({ signatureVersion: 'v4' });
 export const kms = new AWS.KMS();
+export const ses = new AWS.SES({ apiVersion: '2010-12-01' });
 
 export const generatePresignedUploadUrl = (
   key: string,
@@ -39,14 +43,19 @@ export const uploadToS3 = async (
   key: string,
   mimeType: string
 ): Promise<string> => {
-  const params = {
+  const params: AWS.S3.PutObjectRequest = {
     Bucket: config.aws.s3Bucket,
     Key: key,
     Body: buffer,
     ContentType: mimeType,
-    ServerSideEncryption: 'aws:kms' as const,
-    SSEKMSKeyId: config.aws.kmsKeyId,
   };
+
+  // Only apply KMS encryption when a key is actually configured
+  if (config.aws.kmsKeyId) {
+    params.ServerSideEncryption = 'aws:kms';
+    params.SSEKMSKeyId = config.aws.kmsKeyId;
+  }
+
   const result = await s3.upload(params).promise();
   return result.Key;
 };
@@ -80,4 +89,39 @@ export const decryptField = async (ciphertext: string): Promise<string> => {
   };
   const result = await kms.decrypt(params).promise();
   return result.Plaintext!.toString();
+};
+
+export const sendEmail = async (to: string, subject: string, htmlBody: string): Promise<void> => {
+  const params: AWS.SES.SendEmailRequest = {
+    Source: config.smtp.from || 'noreply@procureflow.com',
+    Destination: {
+      ToAddresses: [to],
+    },
+    Message: {
+      Subject: {
+        Data: subject,
+      },
+      Body: {
+        Html: {
+          Data: htmlBody,
+        },
+      },
+    },
+  };
+
+  try {
+    if (config.nodeEnv === 'development') {
+      console.log(`[Mock SES Email] Sent email to ${to}:\nSubject: ${subject}\nBody: ${htmlBody}`);
+      return;
+    }
+    await ses.sendEmail(params).promise();
+    console.log(`Email successfully sent to ${to}`);
+  } catch (error: any) {
+    console.error(`Failed to send email to ${to} via SES:`, error);
+    if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
+      console.log(`[SES Failover Mock Email] Sent email to ${to}:\nSubject: ${subject}\nBody: ${htmlBody}`);
+      return;
+    }
+    throw error;
+  }
 };

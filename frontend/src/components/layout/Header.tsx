@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { notificationApi } from '../../services/endpoints';
-import { Menu, Bell, Search, LogOut, User, Moon } from 'lucide-react';
+import { Menu, Bell, Search, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -31,7 +31,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
       <div className="flex items-center gap-4">
         <button
           onClick={onMenuToggle}
-          className="lg:hidden text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors"
+          title="Toggle sidebar"
+          className="text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors"
         >
           <Menu size={20} />
         </button>
@@ -57,10 +58,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
-        </button>
-
-        <button className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
-          <Moon size={18} />
         </button>
 
         <div className="w-px h-6 bg-white/[0.06] mx-2 hidden sm:block" />

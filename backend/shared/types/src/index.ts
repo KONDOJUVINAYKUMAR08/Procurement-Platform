@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 /* ─── User & Auth ──────────────────────────────────────────────── */
 
-export type UserRole = 'admin' | 'procurement_manager' | 'finance' | 'vendor' | 'auditor';
+export type UserRole = 'admin' | 'procurement_manager' | 'finance' | 'vendor' | 'auditor' | 'employee';
 
 export interface IUser {
   _id: string;
@@ -13,6 +13,9 @@ export interface IUser {
   role: UserRole;
   department: string;
   isActive: boolean;
+  /** For role==='vendor' users: links the login to a specific Procurement_Vendor._id.
+   *  Used by the AI service to scope a vendor's data access to only their own records. */
+  vendorId?: string;
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -255,10 +258,13 @@ export interface AppConfig {
   corsOrigin: string;
   aws: {
     region: string;
-    accessKeyId: string;
-    secretAccessKey: string;
     s3Bucket: string;
     kmsKeyId: string;
+  };
+  bedrock: {
+    region: string;
+    textModelId: string;
+    embeddingModelId: string;
   };
   smtp: {
     host: string;
@@ -277,9 +283,10 @@ export const ROLES = {
   FINANCE: 'finance' as const,
   VENDOR: 'vendor' as const,
   AUDITOR: 'auditor' as const,
+  EMPLOYEE: 'employee' as const,
 };
 
-export const ALL_ROLES: UserRole[] = ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor'];
+export const ALL_ROLES: UserRole[] = ['admin', 'procurement_manager', 'finance', 'vendor', 'auditor', 'employee'];
 
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   admin: ['*'],
@@ -321,5 +328,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'audit:read',
     'notifications:read',
     'dashboard:read', 'reports:read',
+  ],
+  employee: [
+    'attendance:read:own', 'attendance:write:own',
+    'payroll:read:own',
+    'letters:read:own',
+    'documents:read:own',
   ],
 };

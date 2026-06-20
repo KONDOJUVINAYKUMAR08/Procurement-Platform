@@ -4,9 +4,10 @@ export interface User {
   firstName: string;
   lastName: string;
   fullName: string;
-  role: 'admin' | 'procurement_manager' | 'finance';
+  role: 'admin' | 'procurement_manager' | 'finance' | 'vendor' | 'auditor' | 'employee';
   department: string;
   isActive: boolean;
+  mustChangePassword?: boolean;
   lastLogin?: string;
   createdAt: string;
 }
@@ -134,6 +135,25 @@ export interface Invoice {
   createdBy: string | User;
   createdAt: string;
   updatedAt: string;
+
+  // Rich/GST fields
+  invoiceType?: 'CUSTOMER_INVOICE' | 'VENDOR_INVOICE';
+  vendorId?: string;
+  customerId?: string;
+  partyName?: string;
+  partyGstin?: string;
+  partyPan?: string;
+  partyAddress?: string;
+  purchaseOrderId?: string;
+  contractId?: string;
+  poNumber?: string;
+  placeOfSupply?: string;
+  vendorPayable?: number;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  accountHolder?: string;
+  upiId?: string;
 }
 
 export interface Notification {

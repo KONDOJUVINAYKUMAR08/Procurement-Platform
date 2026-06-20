@@ -54,10 +54,38 @@ export class InvoiceController {
     }
   }
 
+  async delete(req: IAuthenticatedRequest, res: Response) {
+    try {
+      await invoiceService.delete(req.params.id);
+      return sendSuccess(res, null, 'Invoice deleted successfully');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
+    }
+  }
+
   async approve(req: IAuthenticatedRequest, res: Response) {
     try {
       const invoice = await invoiceService.approve(req.params.id, req.user!.userId);
       return sendSuccess(res, invoice, 'Invoice approved successfully');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
+    }
+  }
+
+  async markAsPaid(req: IAuthenticatedRequest, res: Response) {
+    try {
+      const { paymentMethod } = req.body;
+      const invoice = await invoiceService.markAsPaid(req.params.id, paymentMethod || 'Bank Transfer');
+      return sendSuccess(res, invoice, 'Invoice marked as paid successfully');
+    } catch (error: any) {
+      return sendError(res, error.message, 400);
+    }
+  }
+
+  async generatePdf(req: IAuthenticatedRequest, res: Response) {
+    try {
+      const { url, fileName } = await invoiceService.generatePdf(req.params.id);
+      return sendSuccess(res, { url, fileName }, 'PDF generated successfully');
     } catch (error: any) {
       return sendError(res, error.message, 400);
     }

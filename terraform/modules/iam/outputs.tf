@@ -1,6 +1,3 @@
-output "instance_profile_name" {
-  value = aws_iam_instance_profile.ec2_profile.name
-}
-output "ec2_role_arn" {
-  value = aws_iam_role.ec2_role.arn
+output "irsa_role_arns" {
+  value = { for k, v in module.irsa : k => v.iam_role_arn }
 }

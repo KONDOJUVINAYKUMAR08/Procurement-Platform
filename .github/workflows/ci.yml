@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build backend + frontend
+        run: npm run build
+
+      - name: SonarQube Scan
+        if: ${{ env.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        uses: sonarsource/sonarqube-scan-action@v3
+
+      - name: Snyk Scan
+        if: ${{ env.SNYK_TOKEN != '' }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        uses: snyk/actions/node@master
+        with:
+          args: --severity-threshold=high
+
+      - name: Build backend images for Trivy scan
+        run: |
+          for svc in identity-service finance-service procurement-service document-service ai-service; do
+            docker build -f backend/services/$svc/Dockerfile -t procurement-$svc:ci .
+          done
+          docker build -f frontend/Dockerfile -t procurement-frontend:ci frontend
+
+      - name: Trivy Container Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'procurement-ai-service:ci'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform
+
+      - name: Terraform Init & Validate (per environment)
+        run: |
+          for env in shared dev prod; do
+            (cd terraform/environments/$env && terraform init -backend=false && terraform validate)
+          done
+
+      - name: Helm Dependency Update
+        run: helm dependency update helm/procurement-platform
+
+      - name: Helm Lint
+        run: helm lint helm/procurement-platform -f helm/procurement-platform/values.yaml -f helm/procurement-platform/values-dev.yaml
